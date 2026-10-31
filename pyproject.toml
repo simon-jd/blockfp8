@@ -1,0 +1,15 @@
+[project]
+name = "blockfp8"
+version = "0.1.0"
+description = "Block-scaled FP8 GEMM for NVIDIA Ada (sm_89), written with CuTe"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = ["torch>=2.4"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["gpu: needs an sm_89 GPU and the built extension"]
+
+[tool.ruff]
+line-length = 100
