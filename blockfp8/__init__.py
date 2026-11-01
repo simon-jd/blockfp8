@@ -3,7 +3,7 @@
 from .gemm import check_gemm_args, configs, gemm, native_available
 from .layout import BLOCK_N, FP8_DTYPE, FP8_MAX, GROUP_K
 from .quant import quantize_activations, quantize_weights
-from .reference import dequantize_activations, dequantize_weights, reference_gemm
+from .reference import dequantize_activations, dequantize_weights, error_bound, reference_gemm
 
 __all__ = [
     "BLOCK_N",
@@ -14,6 +14,7 @@ __all__ = [
     "configs",
     "dequantize_activations",
     "dequantize_weights",
+    "error_bound",
     "gemm",
     "native_available",
     "quantize_activations",

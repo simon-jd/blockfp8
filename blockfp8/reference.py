@@ -57,3 +57,26 @@ def dequantize_weights(w_q: torch.Tensor, scales: torch.Tensor) -> torch.Tensor:
     n, k = w_q.shape
     s = _expand_b_scales(scales.double(), n).repeat_interleave(GROUP_K, dim=1)[:, :k]
     return w_q.double() * s
+
+
+# Error model of the kernel (see docs/design.md, "Precision").
+# The FP8 MMA aligns its 32 products and the accumulator input to the largest
+# of them and keeps MMA_FRACTION_BITS bits below that leading bit; the rest is
+# dropped. One mma therefore errs by at most 33 * 2^-F * max|addend|, and the
+# largest addend is bounded by the block's sum of |products| so far. Four mmas
+# per 128-wide block, then FP32 scaling and accumulation.
+MMA_FRACTION_BITS = 13  # measured: results/micro/mma_precision.json, "summary"
+BF16_U = 2.0**-8  # unit roundoff of bfloat16 (8 significant bits)
+FP32_U = 2.0**-24
+
+
+def acc_gamma(k: int) -> float:
+    """Worst-case accumulation error relative to sum_kb |sa sb| sum_k |a b|."""
+    kb = -(-k // 128)
+    return 4 * 33 * 2.0**-MMA_FRACTION_BITS + (4 + 3 * kb) * FP32_U
+
+
+def error_bound(c_exact: torch.Tensor, c_abs: torch.Tensor, k: int) -> torch.Tensor:
+    """Elementwise worst-case bound on |C_kernel - C_exact| for a bf16 output."""
+    acc = acc_gamma(k) * c_abs
+    return BF16_U * (c_exact.abs() + acc) + acc + torch.finfo(torch.float32).tiny
