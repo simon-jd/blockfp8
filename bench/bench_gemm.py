@@ -229,7 +229,7 @@ def measure_layer(name, n, k, m_values, runs, triton):
                     for mode in ("warm", "cold"):
                         for _ in range(calls_per):
                             if mode == "cold":
-                                torch.sum(flush, dtype=torch.int64, out=flush_out)
+                                torch.sum(flush, dim=0, dtype=torch.int64, out=flush_out)
                             torch.cuda._sleep(1)
                             fns[impl]()
                             labels.append((r, impl, mode))

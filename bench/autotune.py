@@ -32,7 +32,7 @@ def time_cold_us(fn, flush, sink, calls=15):
     s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
     out = []
     for _ in range(calls):
-        torch.sum(flush, dtype=torch.int64, out=sink)
+        torch.sum(flush, dim=0, dtype=torch.int64, out=sink)
         s.record()
         fn()
         e.record()
