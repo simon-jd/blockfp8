@@ -1,0 +1,6416 @@
+{
+ "header": {
+  "time_utc": "2026-11-02T09:34:07Z",
+  "git": {
+   "commit": "caf0bd853ffaf96cead4961a5ede19de5759b5ba",
+   "dirty": true,
+   "cutlass_commit": "2c85f497547eb441f0fe80bfb0fb2e6f9add1719"
+  },
+  "holds_gpu_lock": true,
+  "benchmark": "autotune_fused",
+  "configs": [
+   "m16n128s5w4",
+   "m16n64s4w4b2",
+   "m16n64s8w4",
+   "m32n128s4w4",
+   "m32n64s4w4b2"
+  ],
+  "unfused_configs": [
+   "m128n128s3w8",
+   "m64n128s4w4",
+   "m32n128s4w4",
+   "m16n128s5w4",
+   "m64n128s2w4b2",
+   "m128n128s2w8",
+   "m16n64s4w4b2",
+   "m32n64s4w4b2",
+   "m64n64s3w4b2",
+   "m128n64s3w4",
+   "m128n64s2w4b2",
+   "m128n64s3w8"
+  ]
+ },
+ "gpu_before": {
+  "timestamp": "2026/11/02 01:34:07.955",
+  "name": "NVIDIA GeForce RTX 4090",
+  "driver_version": "595.99.02",
+  "pstate": "P0",
+  "clocks.sm": "2520 MHz",
+  "clocks.mem": "10251 MHz",
+  "clocks.max.sm": "3105 MHz",
+  "temperature.gpu": "57",
+  "power.draw": "83.91 W",
+  "power.limit": "450.00 W",
+  "utilization.gpu": "0 %",
+  "memory.used": "1374 MiB",
+  "memory.total": "24564 MiB",
+  "clocks_event_reasons.active": "0x0000000000000000",
+  "compute_apps": [
+   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 181 MiB",
+   "2044436, .venv/bin/python, 644 MiB"
+  ]
+ },
+ "shapes": [
+  {
+   "layer": "qkv",
+   "N": 6144,
+   "K": 4096,
+   "M": 1,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 2,
+    "us": 32.76799991726875
+   },
+   "separate_us": 33.79200026392937,
+   "separate_vllm_quant_us": 34.81600061058998,
+   "wins": true,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 32.76799991726875
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 32.76799991726875
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 32.96000137925148
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 33.63199904561043
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 33.79200026392937
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 33.79200026392937
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 33.79200026392937
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 34.432001411914825
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 35.77600046992302
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 36.031998693943024
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 36.19199991226196
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 36.70400008559227
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 36.768000572919846
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 36.83200106024742
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 36.99199855327606
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 37.88800165057182
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 37.88800165057182
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 37.98399865627289
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 38.91199827194214
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 38.91199827194214
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 38.91199827194214
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 39.16800022125244
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 39.20000046491623
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 39.264000952243805
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 39.61599990725517
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 39.93599861860275
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 39.93599861860275
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 41.95199906826019
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 41.98399931192398
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 42.080000042915344
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 43.007999658584595
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 43.007999658584595
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 44.35199871659279
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 48.128001391887665
+    }
+   ]
+  },
+  {
+   "layer": "qkv",
+   "N": 6144,
+   "K": 4096,
+   "M": 4,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 2,
+    "us": 32.76799991726875
+   },
+   "separate_us": 32.83200040459633,
+   "separate_vllm_quant_us": 34.04799848794937,
+   "wins": true,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 32.76799991726875
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 33.055998384952545
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 33.47200155258179
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 33.663999289274216
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 33.695999532938
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 33.79200026392937
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 33.79200026392937
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 34.52799841761589
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 34.88000109791756
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 35.48799827694893
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 36.06399893760681
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 36.0959991812706
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 36.57599911093712
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 36.959998309612274
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 37.05599904060364
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 37.76000067591667
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 37.88800165057182
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 38.656000047922134
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 38.91199827194214
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 38.91199827194214
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 39.103999733924866
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 39.16800022125244
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 39.264000952243805
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 39.712000638246536
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 39.93599861860275
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 39.93599861860275
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 39.93599861860275
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 40.12800008058548
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 41.98399931192398
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 42.14400053024292
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 42.208001017570496
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 42.62400045990944
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 43.007999658584595
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 45.05600035190582
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 48.35199937224388
+    }
+   ]
+  },
+  {
+   "layer": "qkv",
+   "N": 6144,
+   "K": 4096,
+   "M": 16,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 2,
+    "us": 33.663999289274216
+   },
+   "separate_us": 33.984001725912094,
+   "separate_vllm_quant_us": 34.84800085425377,
+   "wins": true,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 33.663999289274216
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 34.52799841761589
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 35.679999738931656
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 35.93600168824196
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 35.999998450279236
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 36.80000081658363
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 36.86400130391121
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 37.50399872660637
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 37.567999213933945
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 37.76000067591667
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 37.88800165057182
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 38.91199827194214
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 39.0079990029335
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 39.51999917626381
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 39.5519994199276
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 39.61599990725517
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 39.68000039458275
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 39.712000638246536
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 39.93599861860275
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 39.93599861860275
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 40.22400081157684
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 40.25600105524063
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 40.832001715898514
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 41.98399931192398
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 41.98399931192398
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 41.98399931192398
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 41.98399931192398
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 42.11200028657913
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 42.7200011909008
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 42.78400167822838
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 43.007999658584595
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 44.19200122356415
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 45.21600157022476
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 45.3759990632534
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 46.08000069856644
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 46.49600014090538
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 47.87199944257736
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 48.128001391887665
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 48.35199937224388
+    }
+   ]
+  },
+  {
+   "layer": "qkv",
+   "N": 6144,
+   "K": 4096,
+   "M": 64,
+   "best": {
+    "config": 4,
+    "name": "m32n64s4w4b2",
+    "splits": 4,
+    "us": 47.39199951291084
+   },
+   "separate_us": 34.81600061058998,
+   "separate_vllm_quant_us": 35.840000957250595,
+   "wins": false,
+   "all": [
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 47.39199951291084
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 49.056001007556915
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 49.15200173854828
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 50.175998359918594
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 51.392000168561935
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 52.22399905323982
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 53.247999399900436
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 53.247999399900436
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 53.247999399900436
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 53.53600159287453
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 54.27199974656105
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 54.52800169587135
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 55.456001311540604
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 56.51199817657471
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 57.11999908089638
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 57.18399956822395
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 57.34400078654289
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 58.04799869656563
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 60.06399914622307
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 60.416001826524734
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 60.63999980688095
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 62.272001057863235
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 66.56000018119812
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 67.80800223350525
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 72.7040022611618
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 73.85600358247757
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 74.75200295448303
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 74.91199672222137
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 77.05599814653397
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 82.62400329113007
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 82.94399827718735
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 83.0719992518425
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 89.08800035715103
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 91.10400080680847
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 94.27200257778168
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 97.28000313043594
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 99.32799637317657
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 102.39999741315842
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 108.5439994931221
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 109.56799983978271
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 119.80800330638885
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 119.80800330638885
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 120.83200365304947
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 174.3679940700531
+    }
+   ]
+  },
+  {
+   "layer": "qkv",
+   "N": 6144,
+   "K": 4096,
+   "M": 256,
+   "best": {
+    "config": 3,
+    "name": "m32n128s4w4",
+    "splits": 1,
+    "us": 139.26400244235992
+   },
+   "separate_us": 58.36800113320351,
+   "separate_vllm_quant_us": 59.39200147986412,
+   "wins": false,
+   "all": [
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 139.26400244235992
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 139.26400244235992
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 149.85600113868713
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 154.62400019168854
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 157.69599378108978
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 158.720001578331
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 160.96000373363495
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 164.57599401474
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 167.93599724769592
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 175.10400712490082
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 175.29599368572235
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 176.41599476337433
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 179.9039989709854
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 186.78399920463562
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 189.43999707698822
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 191.48799777030945
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 202.7519941329956
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 204.8960030078888
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 207.87200331687927
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 215.03999829292297
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 224.03199970722198
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 225.2800017595291
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 228.35199534893036
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 251.74400210380554
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 251.8720030784607
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 270.33600211143494
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 274.1439938545227
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 291.83998703956604
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 301.05599761009216
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 301.05599761009216
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 313.34400177001953
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 318.4640109539032
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 319.487988948822
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 320.51199674606323
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 346.1120128631592
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 346.1120128631592
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 349.1840064525604
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 358.0799996852875
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 374.783992767334
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 378.1439960002899
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 378.7199854850769
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 380.7680010795593
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 437.24799156188965
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 530.4319858551025
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 535.5520248413086
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 535.7760190963745
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 589.8240208625793
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 607.9360246658325
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 628.5120248794556
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 858.1119775772095
+    }
+   ]
+  },
+  {
+   "layer": "o",
+   "N": 4096,
+   "K": 4096,
+   "M": 1,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 2,
+    "us": 23.552000522613525
+   },
+   "separate_us": 23.552000522613525,
+   "separate_vllm_quant_us": 24.57600086927414,
+   "wins": false,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 23.552000522613525
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 23.552000522613525
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 23.871999233961105
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 24.671999737620354
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 25.95200017094612
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 26.335999369621277
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 27.23200060427189
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 27.615999802947044
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 27.775999158620834
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 28.28799933195114
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 28.60799990594387
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 29.343999922275543
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 29.56799976527691
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 29.791999608278275
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 29.952000826597214
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 30.079999938607216
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 30.6560005992651
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 30.880000442266464
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 31.328000128269196
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 31.90400078892708
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 32.127998769283295
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 47.10400104522705
+    }
+   ]
+  },
+  {
+   "layer": "o",
+   "N": 4096,
+   "K": 4096,
+   "M": 4,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 2,
+    "us": 23.455999791622162
+   },
+   "separate_us": 24.57600086927414,
+   "separate_vllm_quant_us": 25.599999353289604,
+   "wins": true,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 23.455999791622162
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 23.552000522613525
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 23.552000522613525
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 24.57600086927414
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 24.73600022494793
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 24.768000468611717
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 24.768000468611717
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 24.960000067949295
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 25.631999596953392
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 25.79200081527233
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 25.887999683618546
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 26.335999369621277
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 27.424000203609467
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 27.744000777602196
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 28.063999488949776
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 28.896000236272812
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 28.896000236272812
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 29.664000496268272
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 29.759999364614487
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 29.85600009560585
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 30.94400092959404
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 32.575998455286026
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 32.575998455286026
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 47.13600128889084
+    }
+   ]
+  },
+  {
+   "layer": "o",
+   "N": 4096,
+   "K": 4096,
+   "M": 16,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 2,
+    "us": 23.552000522613525
+   },
+   "separate_us": 24.671999737620354,
+   "separate_vllm_quant_us": 25.760000571608543,
+   "wins": true,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 23.552000522613525
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 24.480000138282776
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 24.607999250292778
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 25.599999353289604
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 26.016000658273697
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 26.208000257611275
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 26.27200074493885
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 26.43200010061264
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 26.623999699950218
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 26.688000187277794
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 26.688000187277794
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 27.456000447273254
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 27.615999802947044
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 27.648000046610832
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 28.64000014960766
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 28.672000393271446
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 29.69600073993206
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 30.368000268936157
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 31.328000128269196
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 31.87200054526329
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 32.735999673604965
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 32.76799991726875
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 32.76799991726875
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 32.92800113558769
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 33.79200026392937
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 34.81600061058998
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 35.51999852061272
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 37.88800165057182
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 47.71199822425842
+    }
+   ]
+  },
+  {
+   "layer": "o",
+   "N": 4096,
+   "K": 4096,
+   "M": 64,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 1,
+    "us": 28.736000880599022
+   },
+   "separate_us": 24.73600022494793,
+   "separate_vllm_quant_us": 25.599999353289604,
+   "wins": false,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 28.736000880599022
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 30.719999223947525
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 31.74399957060814
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 33.79200026392937
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 33.79200026392937
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 34.432001411914825
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 35.840000957250595
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 36.928001791238785
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 38.88000175356865
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 38.91199827194214
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 39.03999924659729
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 39.93599861860275
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 39.96799886226654
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 40.95999896526337
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 41.21600091457367
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 43.007999658584595
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 43.007999658584595
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 43.07200014591217
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 43.83999854326248
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 44.03200000524521
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 44.863998889923096
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 45.05600035190582
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 46.08000069856644
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 46.08000069856644
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 47.10400104522705
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 48.128001391887665
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 49.15200173854828
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 50.464000552892685
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 51.19999870657921
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 51.19999870657921
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 52.22399905323982
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 52.22399905323982
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 53.50400134921074
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 54.27199974656105
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 55.296000093221664
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 55.296000093221664
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 57.34400078654289
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 58.36800113320351
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 64.51199948787689
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 67.26399809122086
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 71.68000191450119
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 71.9359964132309
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 73.72800260782242
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 74.97599720954895
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 80.89599758386612
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 80.92799782752991
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 116.73600226640701
+    }
+   ]
+  },
+  {
+   "layer": "o",
+   "N": 4096,
+   "K": 4096,
+   "M": 256,
+   "best": {
+    "config": 3,
+    "name": "m32n128s4w4",
+    "splits": 1,
+    "us": 93.98400038480759
+   },
+   "separate_us": 38.176000118255615,
+   "separate_vllm_quant_us": 38.91199827194214,
+   "wins": false,
+   "all": [
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 93.98400038480759
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 95.23200243711472
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 102.24000364542007
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 105.47199845314026
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 107.51999914646149
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 108.5439994931221
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 108.5439994931221
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 110.59200018644333
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 115.52000045776367
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 117.76000261306763
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 118.1119978427887
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 119.99999731779099
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 129.02399897575378
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 129.05600666999817
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 130.048006772995
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 134.14399325847626
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 136.19199395179749
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 138.2399946451187
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 140.28799533843994
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 151.5520066022873
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 153.31199765205383
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 154.62400019168854
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 154.7199934720993
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 159.5200002193451
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 159.743994474411
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 169.98399794101715
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 172.03199863433838
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 178.0800074338913
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 178.17600071430206
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 183.3920031785965
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 194.5600062608719
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 197.63199985027313
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 200.70399343967438
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 200.99200308322906
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 215.03999829292297
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 225.2800017595291
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 225.2800017595291
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 235.80799996852875
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 241.66400730609894
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 251.90401077270508
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 252.86400318145752
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 277.8240144252777
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 330.52799105644226
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 330.7519853115082
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 357.37600922584534
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 374.783992767334
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 404.4800102710724
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 421.88799381256104
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 574.4320154190063
+    }
+   ]
+  },
+  {
+   "layer": "gate_up",
+   "N": 24576,
+   "K": 4096,
+   "M": 1,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 6,
+    "us": 112.64000087976456
+   },
+   "separate_us": 111.39199882745743,
+   "separate_vllm_quant_us": 112.57600039243698,
+   "wins": false,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 112.64000087976456
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 113.66400122642517
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 113.66400122642517
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 113.82400244474411
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 113.98400366306305
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 114.68800157308578
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 114.68800157308578
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 115.7120019197464
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 115.7120019197464
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 116.44800007343292
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 116.48000031709671
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 116.73600226640701
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 116.73600226640701
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 117.69600212574005
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 117.98399686813354
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 118.01599711179733
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 118.78400295972824
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 118.78400295972824
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 119.13599818944931
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 119.48800086975098
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 119.77600306272507
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 119.80800330638885
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 119.90399658679962
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 120.03199756145477
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 120.64000219106674
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 122.5920021533966
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 122.8799968957901
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 123.90399724245071
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 124.09599870443344
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 124.1919994354248
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 124.92799758911133
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 124.92799758911133
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 125.21600723266602
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 125.66399574279785
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 125.69600343704224
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 125.95200538635254
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 125.95200538635254
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 125.95200538635254
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 126.97599828243256
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 129.02399897575378
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 129.31199371814728
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 132.51200318336487
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 133.12000036239624
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 137.2160017490387
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 157.69599378108978
+    }
+   ]
+  },
+  {
+   "layer": "gate_up",
+   "N": 24576,
+   "K": 4096,
+   "M": 4,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 1,
+    "us": 113.66400122642517
+   },
+   "separate_us": 111.61600053310394,
+   "separate_vllm_quant_us": 112.38399893045425,
+   "wins": false,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 113.66400122642517
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 113.76000195741653
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 114.68800157308578
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 114.97599631547928
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 115.7120019197464
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 115.7120019197464
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 116.73600226640701
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 116.73600226640701
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 117.08799749612808
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 117.76000261306763
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 117.79200285673141
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 117.98399686813354
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 118.78400295972824
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 118.97599697113037
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 119.07199770212173
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 119.19999867677689
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 120.83200365304947
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 121.0239976644516
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 121.56800180673599
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 121.85599654912949
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 122.8799968957901
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 122.8799968957901
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 123.90399724245071
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 123.90399724245071
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 123.90399724245071
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 123.90399724245071
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 123.96799772977829
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 125.18399953842163
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 125.59999525547028
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 125.95200538635254
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 125.95200538635254
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 126.97599828243256
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 128.00000607967377
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 128.00000607967377
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 129.02399897575378
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 129.02399897575378
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 129.31199371814728
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 129.69599664211273
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 129.7920048236847
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 130.048006772995
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 130.048006772995
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 131.071999669075
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 131.8719983100891
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 139.26400244235992
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 140.99200069904327
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 143.5839980840683
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 162.78399527072906
+    }
+   ]
+  },
+  {
+   "layer": "gate_up",
+   "N": 24576,
+   "K": 4096,
+   "M": 16,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 1,
+    "us": 114.46399986743927
+   },
+   "separate_us": 112.64000087976456,
+   "separate_vllm_quant_us": 113.66400122642517,
+   "wins": false,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 114.46399986743927
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 115.7120019197464
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 117.76000261306763
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 117.76000261306763
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 118.65600198507309
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 118.78400295972824
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 120.83200365304947
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 121.60000205039978
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 122.079998254776
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 122.23999947309494
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 122.8799968957901
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 122.8799968957901
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 123.07199835777283
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 123.90399724245071
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 125.76000392436981
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 126.08000636100769
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 127.13600695133209
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 128.1919926404953
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 128.89599800109863
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 129.02399897575378
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 129.02399897575378
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 129.66400384902954
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 129.7599971294403
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 131.04000687599182
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 132.09599256515503
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 133.12000036239624
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 135.1040005683899
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 135.16800105571747
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 137.2160017490387
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 137.2160017490387
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 137.2160017490387
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 137.2160017490387
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 139.26400244235992
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 139.26400244235992
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 140.06400108337402
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 141.05600118637085
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 142.56000518798828
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 147.45600521564484
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 148.47999811172485
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 149.4079977273941
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 149.50400590896606
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 149.50400590896606
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 149.50400590896606
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 151.5520066022873
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 153.3759981393814
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 182.27200210094452
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 197.7279931306839
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 201.7280012369156
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 205.82400262355804
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 216.06400609016418
+    }
+   ]
+  },
+  {
+   "layer": "gate_up",
+   "N": 24576,
+   "K": 4096,
+   "M": 64,
+   "best": {
+    "config": 4,
+    "name": "m32n64s4w4b2",
+    "splits": 1,
+    "us": 142.33599603176117
+   },
+   "separate_us": 116.83200299739838,
+   "separate_vllm_quant_us": 117.79200285673141,
+   "wins": false,
+   "all": [
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 142.33599603176117
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 143.64799857139587
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 156.67200088500977
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 156.67200088500977
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 167.1680063009262
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 171.00800573825836
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 171.00800573825836
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 174.0799993276596
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 177.824005484581
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 188.4160041809082
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 190.8160001039505
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 192.28799641132355
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 192.47999787330627
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 194.46399807929993
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 205.63200116157532
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 208.8959962129593
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 209.05600488185883
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 212.99199759960175
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 230.3999960422516
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 232.35200345516205
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 232.60800540447235
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 240.63999950885773
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 250.88000297546387
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 253.12000513076782
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 276.73599123954773
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 277.15200185775757
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 289.08801078796387
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 289.15199637413025
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 322.56001234054565
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 326.6560137271881
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 342.0160114765167
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 342.0160114765167
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 345.08800506591797
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 345.8240032196045
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 353.2800078392029
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 361.7280125617981
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 370.6879913806915
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 370.6879913806915
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 379.0079951286316
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 397.3119854927063
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 397.63200283050537
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 398.3359932899475
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 456.7039906978607
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 551.9359707832336
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 552.9599785804749
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 585.4399800300598
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 639.0720009803772
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 649.4399905204773
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 660.1600050926208
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 859.1679930686951
+    }
+   ]
+  },
+  {
+   "layer": "gate_up",
+   "N": 24576,
+   "K": 4096,
+   "M": 256,
+   "best": {
+    "config": 4,
+    "name": "m32n64s4w4b2",
+    "splits": 1,
+    "us": 541.6960120201111
+   },
+   "separate_us": 176.83200538158417,
+   "separate_vllm_quant_us": 177.5359958410263,
+   "wins": false,
+   "all": [
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 541.6960120201111
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 542.0479774475098
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 596.992015838623
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 622.5919723510742
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 639.3600106239319
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 641.0239934921265
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 646.1439728736877
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 665.6000018119812
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 699.3920207023621
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 715.8079743385315
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 746.4960217475891
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 754.688024520874
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 760.8320116996765
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 769.0240144729614
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 807.9360127449036
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 830.1759958267212
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 845.8240032196045
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 910.0800156593323
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 922.6880073547363
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 926.7200231552124
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 935.2319836616516
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 984.000027179718
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 992.5119876861572
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 1082.368016242981
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 1096.7040061950684
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 1116.320013999939
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 1187.8399848937988
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 1231.552004814148
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 1246.3359832763672
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 1247.2319602966309
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 1271.8080282211304
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 1275.9040594100952
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 1275.9040594100952
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 1374.4319677352905
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 1411.072015762329
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 1412.0960235595703
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 1420.3840494155884
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 1429.6640157699585
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 1524.7360467910767
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 1525.7600545883179
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 1575.935959815979
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 1600.7360219955444
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 1862.272024154663
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 2044.1920757293701
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 2148.47993850708
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 2149.3759155273438
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 2270.2078819274902
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 2316.2879943847656
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 2400.2559185028076
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 3334.144115447998
+    }
+   ]
+  },
+  {
+   "layer": "down",
+   "N": 4096,
+   "K": 12288,
+   "M": 1,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 4,
+    "us": 60.70400029420853
+   },
+   "separate_us": 59.7120001912117,
+   "separate_vllm_quant_us": 60.54399907588959,
+   "wins": false,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 60.70400029420853
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 61.216000467538834
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 61.503998935222626
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 62.07999959588051
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 62.752000987529755
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 63.4239986538887
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 63.48799914121628
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 63.48799914121628
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 63.64800035953522
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 64.51199948787689
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 64.51199948787689
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 65.47199934720993
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 65.85600227117538
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 65.92000275850296
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 66.56000018119812
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 66.56000018119812
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 66.56000018119812
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 66.94400310516357
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 67.19999760389328
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 67.58400052785873
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 67.58400052785873
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 67.61600077152252
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 67.74400174617767
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 69.50400024652481
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 69.63200122117996
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 69.63200122117996
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 69.63200122117996
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 69.88800317049026
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 70.65600156784058
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 70.88000327348709
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 71.68000191450119
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 72.7040022611618
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 72.7040022611618
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 74.62400197982788
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 75.1039981842041
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 81.91999793052673
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 116.73600226640701
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 134.88000631332397
+    }
+   ]
+  },
+  {
+   "layer": "down",
+   "N": 4096,
+   "K": 12288,
+   "M": 4,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 3,
+    "us": 60.575999319553375
+   },
+   "separate_us": 59.39200147986412,
+   "separate_vllm_quant_us": 60.416001826524734,
+   "wins": false,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 60.575999319553375
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 60.575999319553375
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 62.24000081419945
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 62.72000074386597
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 63.48799914121628
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 63.48799914121628
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 63.48799914121628
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 63.680000603199005
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 64.44799900054932
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 64.7360011935234
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 64.86400216817856
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 66.43199920654297
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 66.52799993753433
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 66.56000018119812
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 66.56000018119812
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 66.72000139951706
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 67.29599833488464
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 67.58400052785873
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 67.6800012588501
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 67.74400174617767
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 67.77600198984146
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 69.43999975919724
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 69.63200122117996
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 69.63200122117996
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 69.63200122117996
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 70.65600156784058
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 70.65600156784058
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 70.72000205516815
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 71.68000191450119
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 71.68000191450119
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 72.03199714422226
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 72.7040022611618
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 73.82400333881378
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 75.77600330114365
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 80.99199831485748
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 115.7120019197464
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 135.16800105571747
+    }
+   ]
+  },
+  {
+   "layer": "down",
+   "N": 4096,
+   "K": 12288,
+   "M": 16,
+   "best": {
+    "config": 1,
+    "name": "m16n64s4w4b2",
+    "splits": 3,
+    "us": 61.85600161552429
+   },
+   "separate_us": 62.463998794555664,
+   "separate_vllm_quant_us": 63.45599889755249,
+   "wins": true,
+   "all": [
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 61.85600161552429
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 62.463998794555664
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 63.13599646091461
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 63.48799914121628
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 63.48799914121628
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 63.48799914121628
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 64.51199948787689
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 64.51199948787689
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 64.54399973154068
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 65.2799978852272
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 65.5359998345375
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 65.63200056552887
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 65.92000275850296
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 66.49599969387054
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 66.56000018119812
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 66.6240006685257
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 66.94400310516357
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 67.58400052785873
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 68.60800087451935
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 69.50400024652481
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 69.63200122117996
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 70.04799693822861
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 70.592001080513
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 70.65600156784058
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 71.45600020885468
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 71.68000191450119
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 71.68000191450119
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 72.35199958086014
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 72.7040022611618
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 72.7040022611618
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 72.7040022611618
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 73.72800260782242
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 73.72800260782242
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 73.72800260782242
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 73.72800260782242
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 75.71200281381607
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 75.77600330114365
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 75.77600330114365
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 75.77600330114365
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 76.80000364780426
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 76.80000364780426
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 77.7600035071373
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 82.78399705886841
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 116.73600226640701
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 135.16800105571747
+    }
+   ]
+  },
+  {
+   "layer": "down",
+   "N": 4096,
+   "K": 12288,
+   "M": 64,
+   "best": {
+    "config": 4,
+    "name": "m32n64s4w4b2",
+    "splits": 2,
+    "us": 75.77600330114365
+   },
+   "separate_us": 66.56000018119812,
+   "separate_vllm_quant_us": 67.58400052785873,
+   "wins": false,
+   "all": [
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 75.77600330114365
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 77.82399654388428
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 78.72000336647034
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 78.91199737787247
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 80.89599758386612
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 82.94399827718735
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 83.13599973917007
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 83.96799862384796
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 86.01599931716919
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 87.0399996638298
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 88.06400001049042
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 88.06400001049042
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 88.06400001049042
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 89.08800035715103
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 90.11200070381165
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 91.07200056314468
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 93.18400174379349
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 93.18400174379349
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 93.34400296211243
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 94.2080020904541
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 96.44799679517746
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 97.28000313043594
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 99.32799637317657
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 99.32799637317657
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 101.3759970664978
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 103.42399775981903
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 104.25599664449692
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 104.44799810647964
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 105.47199845314026
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 111.61600053310394
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 112.64000087976456
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 116.44800007343292
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 117.91999638080597
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 119.80800330638885
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 121.15199863910675
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 131.071999669075
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 132.09599256515503
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 135.29600203037262
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 135.42400300502777
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 136.19199395179749
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 144.3839967250824
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 144.3839967250824
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 149.4079977273941
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 152.5759994983673
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 161.47199273109436
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 167.93599724769592
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 181.2479943037033
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 185.34399569034576
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 192.51200556755066
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 209.1519981622696
+    }
+   ]
+  },
+  {
+   "layer": "down",
+   "N": 4096,
+   "K": 12288,
+   "M": 256,
+   "best": {
+    "config": 4,
+    "name": "m32n64s4w4b2",
+    "splits": 1,
+    "us": 267.2640085220337
+   },
+   "separate_us": 105.47199845314026,
+   "separate_vllm_quant_us": 106.49599879980087,
+   "wins": false,
+   "all": [
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 1,
+     "us": 267.2640085220337
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 1,
+     "us": 268.2879865169525
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 2,
+     "us": 274.4320034980774
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 3,
+     "us": 278.52800488471985
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 4,
+     "us": 280.5120050907135
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 2,
+     "us": 288.7679934501648
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 6,
+     "us": 289.792001247406
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 3,
+     "us": 296.9599962234497
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 8,
+     "us": 296.9599962234497
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 4,
+     "us": 297.21599817276
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 1,
+     "us": 304.1279911994934
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 6,
+     "us": 311.2959861755371
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 1,
+     "us": 311.3279938697815
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 12,
+     "us": 316.4159953594208
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 2,
+     "us": 321.3759958744049
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 8,
+     "us": 323.5839903354645
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 3,
+     "us": 328.70399951934814
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 4,
+     "us": 332.8000009059906
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 2,
+     "us": 342.0160114765167
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 6,
+     "us": 345.2160060405731
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 12,
+     "us": 350.20801424980164
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 16,
+     "us": 352.9280126094818
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 8,
+     "us": 356.4800024032593
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 3,
+     "us": 357.37600922584534
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 4,
+     "us": 362.4959886074066
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 16,
+     "us": 385.0240111351013
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 12,
+     "us": 386.04798913002014
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 6,
+     "us": 389.7919952869415
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 8,
+     "us": 412.6720130443573
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 16,
+     "us": 430.07999658584595
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 24,
+     "us": 456.0000002384186
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 12,
+     "us": 459.77601408958435
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 24,
+     "us": 467.9679870605469
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 16,
+     "us": 515.392005443573
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 1,
+     "us": 525.3120064735413
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 24,
+     "us": 530.3040146827698
+    },
+    {
+     "config": 3,
+     "name": "m32n128s4w4",
+     "splits": 32,
+     "us": 551.9359707832336
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 2,
+     "us": 562.2079968452454
+    },
+    {
+     "config": 4,
+     "name": "m32n64s4w4b2",
+     "splits": 32,
+     "us": 562.3679757118225
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 3,
+     "us": 584.7039818763733
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 4,
+     "us": 596.6399908065796
+    },
+    {
+     "config": 1,
+     "name": "m16n64s4w4b2",
+     "splits": 32,
+     "us": 623.6159801483154
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 6,
+     "us": 632.6720118522644
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 24,
+     "us": 633.8559985160828
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 8,
+     "us": 665.6000018119812
+    },
+    {
+     "config": 0,
+     "name": "m16n128s5w4",
+     "splits": 32,
+     "us": 676.8640279769897
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 12,
+     "us": 731.8080067634583
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 16,
+     "us": 765.9519910812378
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 24,
+     "us": 836.51202917099
+    },
+    {
+     "config": 2,
+     "name": "m16n64s8w4",
+     "splits": 32,
+     "us": 933.8880181312561
+    }
+   ]
+  }
+ ],
+ "elapsed_s": 82.44334006309509,
+ "gpu_after": {
+  "timestamp": "2026/11/02 01:35:30.455",
+  "name": "NVIDIA GeForce RTX 4090",
+  "driver_version": "595.99.02",
+  "pstate": "P2",
+  "clocks.sm": "2775 MHz",
+  "clocks.mem": "10251 MHz",
+  "clocks.max.sm": "3105 MHz",
+  "temperature.gpu": "65",
+  "power.draw": "263.63 W",
+  "power.limit": "450.00 W",
+  "utilization.gpu": "100 %",
+  "memory.used": "3870 MiB",
+  "memory.total": "24564 MiB",
+  "clocks_event_reasons.active": "0x0000000000000000",
+  "compute_apps": [
+   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 180 MiB",
+   "2044436, .venv/bin/python, 3140 MiB"
+  ]
+ }
+}

@@ -254,3 +254,159 @@ def test_real_qwen3_8b_fp8_down_proj():
     g = _gen(10)
     a, sa = blockfp8.quantize_activations(torch.randn(16, 12288, generator=g, device=DEV))
     check_bounded(blockfp8.gemm(a, sa, b, sb), a, sa, b, sb)
+
+
+# ---- fused activation quantization (gemm_bf16)
+
+FUSED = list(range(len(blockfp8.fused_configs()))) if blockfp8.native_available() else []
+
+
+def _vllm_quant():
+    try:
+        from vllm.model_executor.layers.quantization.utils.fp8_utils import (
+            per_token_group_quant_fp8,
+        )
+    except Exception:  # vLLM not installed
+        return None
+    return lambda x: per_token_group_quant_fp8(x, 128, column_major_scales=True, use_ue8m0=False)
+
+
+def bf16_activations(m, k, seed=0, ties=False):
+    """Random bf16 activations. ties=True gives every 128-wide group an amax
+    of 448 * 2^j, so the scale is a power of two, x / scale is exact and
+    bf16 values often fall exactly halfway between two e4m3 values."""
+    g = _gen(seed)
+    x = torch.randn(m, k, generator=g, device=DEV) * 2
+    if ties:
+        kb = -(-k // 128)
+        xp = torch.nn.functional.pad(x, (0, kb * 128 - k)).view(m, kb, 128)
+        top = 448.0 * torch.exp2(torch.randint(-12, 12, (m, kb, 1), generator=g, device=DEV).float())
+        xp = xp / xp.abs().amax(dim=2, keepdim=True) * top
+        xp[:, :, :1] = top * torch.sign(torch.randn(m, kb, 1, generator=g, device=DEV))
+        x = xp.reshape(m, kb * 128)[:, :k]
+    return x.to(torch.bfloat16).contiguous()
+
+
+def _weights(n, k, seed):
+    g = _gen(seed)
+    return blockfp8.quantize_weights(torch.randn(n, k, generator=g, device=DEV) * 0.02)
+
+
+@pytest.mark.parametrize("config", FUSED)
+@pytest.mark.parametrize("shape", SHAPES)
+@pytest.mark.parametrize("ties", [False, True])
+def test_fused_equals_quantize_then_gemm(config, shape, ties):
+    m, n, k = shape
+    x = bf16_activations(m, k, seed=hash(shape) % 1000, ties=ties)
+    b, sb = _weights(n, k, seed=1)
+    a, sa = blockfp8.quantize_activations(x)
+    expect = blockfp8.gemm(a, sa, b, sb, config=0, split_k=1)
+    c = blockfp8.gemm_bf16(x, b, sb, config=config, split_k=1)
+    assert torch.equal(c, expect)
+
+
+@pytest.mark.parametrize("config", FUSED)
+@pytest.mark.parametrize("splits", [2, 3, 7])
+def test_fused_split_k(config, splits):
+    x = bf16_activations(37, 2048 + 16, seed=splits, ties=True)
+    b, sb = _weights(392, 2048 + 16, seed=2)
+    a, sa = blockfp8.quantize_activations(x)
+    expect = blockfp8.gemm(a, sa, b, sb, config=0, split_k=splits)
+    assert torch.equal(blockfp8.gemm_bf16(x, b, sb, config=config, split_k=splits), expect)
+
+
+@pytest.mark.skipif(_vllm_quant() is None, reason="vLLM not installed")
+@pytest.mark.parametrize("ties", [False, True])
+@pytest.mark.parametrize("shape", [(1, 4096, 4096), (16, 6144, 4096), (64, 4096, 12288)])
+def test_fused_equals_vllm_quant_then_gemm(shape, ties):
+    m, n, k = shape
+    x = bf16_activations(m, k, seed=11, ties=ties)
+    b, sb = _weights(n, k, seed=3)
+    q, s = _vllm_quant()(x)
+    for q2, s2 in (blockfp8.quantize_activations(x), blockfp8.quantize_cuda(x)):
+        assert torch.equal(q.view(torch.uint8), q2.view(torch.uint8)) and torch.equal(s, s2)
+    for config in FUSED:
+        assert torch.equal(blockfp8.gemm_bf16(x, b, sb, config=config, split_k=1),
+                           blockfp8.gemm(q, s, b, sb, config=0, split_k=1))
+
+
+@pytest.mark.parametrize("ties", [False, True])
+@pytest.mark.parametrize("shape", [(1, 128), (7, 272), (33, 4096), (300, 1040)])
+def test_quantize_cuda_equals_reference(shape, ties):
+    x = bf16_activations(*shape, seed=15, ties=ties)
+    x[0, :16] = 0.0
+    for eps in (1e-10, 1e-2):
+        q, s = blockfp8.quantize_cuda(x, eps=eps)
+        q2, s2 = blockfp8.quantize_activations(x, eps=eps)
+        assert s.stride() == s2.stride() == (1, shape[0])
+        assert torch.equal(q.view(torch.uint8), q2.view(torch.uint8)) and torch.equal(s, s2)
+
+
+def test_fused_zero_rows_outliers_and_eps():
+    x = bf16_activations(20, 1024, seed=12)
+    x[:, 77] *= 300.0
+    x[3] = 0.0
+    x[5, 128:256] = 1e-38  # below eps * 448: the scale is floored at eps / 448
+    b, sb = _weights(512, 1024, seed=4)
+    for eps in (1e-10, 1e-4):
+        a, sa = blockfp8.quantize_activations(x, eps=eps)
+        for config in FUSED:
+            c = blockfp8.gemm_bf16(x, b, sb, eps=eps, config=config, split_k=1)
+            assert torch.equal(c, blockfp8.gemm(a, sa, b, sb, config=0, split_k=1))
+            assert torch.all(c[3] == 0)
+
+
+@pytest.mark.parametrize("m", [1, 4, 16, 64, 256])
+def test_fused_auto_plan_and_linear(m):
+    x = bf16_activations(m, 4096, seed=m)
+    b, sb = _weights(6144, 4096, seed=5)
+    a, sa = blockfp8.quantize_activations(x)
+    check_bounded(blockfp8.gemm_bf16(x, b, sb), a, sa, b, sb, vs_triton=False)
+    expect = blockfp8.gemm_bf16(x, b, sb) if blockfp8.prefers_fused(m, 6144, 4096) else \
+        blockfp8.gemm(a, sa, b, sb)
+    assert torch.equal(blockfp8.linear(x, b, sb), expect)
+    assert blockfp8.linear(x[:0], b, sb).shape == (0, 6144)
+
+
+def test_fused_inside_cuda_graph():
+    x = bf16_activations(4, 4096, seed=13)
+    b, sb = _weights(4096, 4096, seed=6)
+    eager = blockfp8.gemm_bf16(x, b, sb, config=0, split_k=8)
+    graph = torch.cuda.CUDAGraph()
+    s = torch.cuda.Stream()
+    s.wait_stream(torch.cuda.current_stream())
+    with torch.cuda.stream(s):
+        blockfp8.gemm_bf16(x, b, sb, config=0, split_k=8)
+        with torch.cuda.graph(graph, stream=s):
+            out = blockfp8.gemm_bf16(x, b, sb, config=0, split_k=8)
+    torch.cuda.current_stream().wait_stream(s)
+    for _ in range(3):
+        graph.replay()
+        torch.cuda.synchronize()
+        assert torch.equal(out, eager)
+
+
+def test_fused_rejects_bad_input():
+    b, sb = _weights(256, 256, seed=7)
+    with pytest.raises(ValueError):
+        blockfp8.gemm_bf16(torch.zeros(2, 256, device=DEV), b, sb)  # float32
+    with pytest.raises(ValueError):
+        blockfp8.gemm_bf16(torch.zeros(2, 512, device=DEV, dtype=torch.bfloat16)[:, ::2], b, sb)
+    with pytest.raises(RuntimeError, match="b_scales"):
+        torch.ops.blockfp8.gemm_bf16(torch.zeros(2, 256, device=DEV, dtype=torch.bfloat16),
+                                     b, sb[:, :1], -1, 0, 1e-10)
+
+
+def test_ops_trace_under_torch_compile():
+    x = bf16_activations(8, 256, seed=14)
+    b, sb = _weights(256, 256, seed=8)
+    a, sa = blockfp8.quantize_activations(x)
+
+    def f(x, a, sa):
+        q, s = torch.ops.blockfp8.quantize(x, 1e-10)
+        return torch.ops.blockfp8.gemm_bf16(x, b, sb, -1, 0, 1e-10) + \
+            torch.ops.blockfp8.gemm(a, sa, b, sb, -1, 0) + torch.ops.blockfp8.linear(x, b, sb) + \
+            torch.ops.blockfp8.gemm(q, s, b, sb, -1, 0)
+
+    out = torch.compile(f, fullgraph=True)(x, a, sa)
+    assert torch.equal(out, f(x, a, sa))

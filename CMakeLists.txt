@@ -34,7 +34,7 @@ if(BLOCKFP8_BUILD_EXTENSION)
   set(TORCH_CUDA_ARCH_LIST "8.9")
   find_package(Torch REQUIRED)
 
-  add_library(blockfp8_C SHARED csrc/ops.cpp csrc/gemm_sm89.cu)
+  add_library(blockfp8_C SHARED csrc/ops.cpp csrc/gemm_sm89.cu csrc/quant_sm89.cu)
   target_include_directories(blockfp8_C PRIVATE ${CUTLASS_DIR}/include csrc)
   target_link_libraries(blockfp8_C PRIVATE ${TORCH_LIBRARIES})
   target_compile_options(blockfp8_C PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${BLOCKFP8_CUDA_FLAGS}>)
