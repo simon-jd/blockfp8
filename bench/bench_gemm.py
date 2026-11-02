@@ -16,8 +16,8 @@ Implementations, each with the operands it would get in practice:
   cublas_bf16        torch.matmul in bf16 (cuBLAS), unquantized
 
 Timing: CUPTI kernel timestamps through torch.profiler. Every timed call is
-preceded by a marker kernel (torch.cuda._sleep), and in cold-L2 mode by a read
-of a 256 MB buffer that evicts the operands. A call's time is the span from
+bracketed by two marker kernels (torch.cuda._sleep); in cold-L2 mode a read
+of a 256 MB buffer that evicts the operands runs before the opening marker. A call's time is the span from
 its first kernel's start to its last kernel's end. One run times `calls`
 calls of every implementation in both L2 modes, implementations in a rotating
 order; the result is the median over >= 10 such interleaved runs, with the IQR.
@@ -232,8 +232,8 @@ def measure_layer(name, n, k, m_values, runs, triton):
                                 torch.sum(flush, dim=0, dtype=torch.int64, out=flush_out)
                             torch.cuda._sleep(1)
                             fns[impl]()
+                            torch.cuda._sleep(1)
                             labels.append((r, impl, mode))
-            torch.cuda._sleep(1)
             torch.cuda.synchronize()
         spans = split_spans(prof, labels)
         for impl in IMPLS:
@@ -267,11 +267,11 @@ def measure_layer(name, n, k, m_values, runs, triton):
 
 
 def split_spans(prof, labels):
-    """Group kernels by the marker launched before each call; returns [(label, span_us)].
+    """Kernels between each call's opening and closing marker; returns [(label, span_us)].
 
-    Launch order per call is [flush if cold], marker, the call's kernels; so the
-    kernels between two markers are one call plus, if the next call is cold,
-    the next call's flush, which is dropped.
+    Launch order per call is [flush if cold], marker, the call's kernels,
+    marker, so the flush (however many kernels it takes) is never inside a
+    bracket.
     """
     path = os.path.join(gpu_state.REPO, "build", f"trace-{os.getpid()}.json")
     prof.export_chrome_trace(path)
@@ -282,17 +282,17 @@ def split_spans(prof, labels):
     groups, cur = [], None
     for e in kernels:
         if MARKER in e["name"]:
-            cur = []
-            groups.append(cur)
+            if cur is None:
+                cur = []
+            else:
+                groups.append(cur)
+                cur = None
         elif cur is not None:
             cur.append(e)
-    groups = groups[:-1]  # the final marker closes the last call
     if len(groups) != len(labels):
         raise RuntimeError(f"{len(groups)} kernel groups for {len(labels)} calls")
     out = []
-    for i, (lab, g) in enumerate(zip(labels, groups)):
-        if i + 1 < len(labels) and labels[i + 1][2] == "cold":
-            g = g[:-1]
+    for lab, g in zip(labels, groups):
         if not g:
             raise RuntimeError(f"no kernels recorded for {lab}")
         span = max(e["ts"] + e["dur"] for e in g) - min(e["ts"] for e in g)
