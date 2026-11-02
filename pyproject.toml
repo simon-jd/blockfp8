@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "blockfp8"
 version = "0.1.0"
@@ -5,6 +9,19 @@ description = "Block-scaled FP8 GEMM for NVIDIA Ada (sm_89), written with CuTe"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = ["torch>=2.4"]
+
+[project.optional-dependencies]
+vllm = ["vllm==0.31.0"]
+
+# The vLLM plugin (blockfp8_vllm): vLLM calls register() in each of its processes.
+[project.entry-points."vllm.general_plugins"]
+blockfp8 = "blockfp8_vllm:register"
+
+[tool.setuptools]
+packages = ["blockfp8", "blockfp8_vllm"]
+
+[tool.setuptools.package-data]
+blockfp8 = ["_C.so"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
