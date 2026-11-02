@@ -48,6 +48,14 @@ using CfgM16 = Config<16, 128, 5, 1, 4>;
 // Two CTAs per SM (48 KB of shared memory, <= 255 registers for 2 x 128 threads).
 using CfgM64x2 = Config<64, 128, 2, 2, 2, 2>;
 using CfgL128S2 = Config<128, 128, 2, 2, 4>;
+// 64-column tiles: twice as many CTAs per weight block row, so mid-size M
+// fills the GPU without split-K and without every CTA re-reading wide tiles.
+using CfgM16N64x2 = Config<16, 64, 4, 1, 4, 2>;
+using CfgM32N64x2 = Config<32, 64, 4, 2, 2, 2>;
+using CfgM64N64x2 = Config<64, 64, 3, 2, 2, 2>;
+using CfgL128N64 = Config<128, 64, 3, 2, 2>;
+using CfgL128N64x2 = Config<128, 64, 2, 2, 2, 2>;
+using CfgL128N64W8 = Config<128, 64, 3, 4, 2>;
 
 const ConfigEntry kConfigs[] = {
     entry<CfgL128>("m128n128s3w8"),
@@ -56,6 +64,12 @@ const ConfigEntry kConfigs[] = {
     entry<CfgM16>("m16n128s5w4"),
     entry<CfgM64x2>("m64n128s2w4b2"),
     entry<CfgL128S2>("m128n128s2w8"),
+    entry<CfgM16N64x2>("m16n64s4w4b2"),
+    entry<CfgM32N64x2>("m32n64s4w4b2"),
+    entry<CfgM64N64x2>("m64n64s3w4b2"),
+    entry<CfgL128N64>("m128n64s3w4"),
+    entry<CfgL128N64x2>("m128n64s2w4b2"),
+    entry<CfgL128N64W8>("m128n64s3w8"),
 };
 constexpr int kNumConfigs = sizeof(kConfigs) / sizeof(kConfigs[0]);
 
