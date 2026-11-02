@@ -26,9 +26,9 @@ bracketed by two marker kernels (torch.cuda._sleep). In cold-L2 mode a read
 of a 256 MB buffer evicts everything and then the call's activation inputs
 are read once, before the opening marker: weights come from DRAM while the
 activations are L2-resident, as in a model where the previous layer has just
-written them (with the activations cold too, the GEMM-only time at M = 64
-was up to 2.6 us longer than right after the quantizer, which made "+q" look
-almost free there). A call's time is the span from
+written them (with the activations cold too, the GEMM alone for o at
+M = 64 was 2.7-4.6 us slower than right after the quantizer, which made "+q"
+look almost free there; bench/l2_probe.py). A call's time is the span from
 its first kernel's start to its last kernel's end. One run times `calls`
 calls of every implementation in both L2 modes, implementations in a rotating
 order; the result is the median over >= 10 such interleaved runs, with the IQR.
