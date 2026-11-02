@@ -14,14 +14,25 @@ Each figure is the median of 3 repetitions inside the run. The driver runs
 --runs rounds of (stock, plugin), alternating which goes first, and writes
 results/e2e/qwen3_8b_fp8.json; --extra triton appends one run of vLLM's own
 W8A8 path (Marlin disabled) as a reference for the output check.
-bench/report_e2e.py summarizes it.
+
+--ppl: model quality instead of speed. wikitext-2-raw-v1 test (bench/wikitext.py;
+lines joined with blank lines, as in the usual perplexity scripts), tokenized
+once and cut into non-overlapping windows of PPL_WINDOW tokens; each window is
+scored on its own with prompt_logprobs (every token but its first). One process
+per configuration: stock, plugin, triton, then stock again (its run-to-run
+noise). Writes results/e2e/wikitext2_ppl.json: perplexity per run, per-window
+NLL sums, and statistics of the per-token logprob differences between runs (the
+per-token logprobs stay in build/e2e).
+bench/report_e2e.py summarizes both files.
 
     .venv/bin/python bench/e2e_vllm.py --runs 5      # takes the lock per run itself
     .venv/bin/python bench/e2e_vllm.py --extra triton
+    .venv/bin/python bench/e2e_vllm.py --ppl
 """
 
 import argparse
 import json
+import math
 import os
 import random
 import statistics
@@ -32,6 +43,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gpu_state  # noqa: E402
+import wikitext  # noqa: E402
 
 MODEL = "Qwen/Qwen3-8B-FP8"
 # The local HF cache entry has no refs/ (so offline lookup by name fails); load
@@ -47,6 +59,10 @@ REPS = 3
 ENGINE = dict(gpu_memory_utilization=0.80, max_model_len=8192, max_num_batched_tokens=8192,
               max_num_seqs=128, enable_prefix_caching=False, seed=0)
 OTHER_PLUGINS = "lora_filesystem_resolver,lora_hf_hub_resolver"
+PPL_WINDOW = 2048
+# One window per scheduler step: prompt logprobs materialize [tokens, vocab] FP32 logits.
+PPL_ENGINE = dict(ENGINE, max_num_batched_tokens=PPL_WINDOW)
+PPL_ORDER = [("ppl1", "stock"), ("ppl1", "plugin"), ("ppl1", "triton"), ("ppl2", "stock")]
 OUT_DIR = os.path.join(gpu_state.REPO, "results", "e2e")
 RAW_DIR = os.path.join(gpu_state.REPO, "build", "e2e")  # per-run files and logs
 PROMPTS = [
@@ -185,6 +201,10 @@ def run_one(config, out, reference):
     with open(out, "w") as f:
         json.dump({**meta, **res}, f)
     print(f"[{config}] wrote {os.path.relpath(out, gpu_state.REPO)}", flush=True)
+    shut_down(llm)
+
+
+def shut_down(llm):
     del llm  # shuts the engine process down before this process (and its lock) goes away
     import multiprocessing
 
@@ -193,6 +213,47 @@ def run_one(config, out, reference):
     # Interpreter teardown after vLLM aborts in a C++ destructor; nothing is left to do.
     sys.stdout.flush()
     os._exit(0)
+
+
+def run_one_ppl(config, out):
+    """wikitext-2 test perplexity of one configuration (one process)."""
+    if not gpu_state.holds_gpu_lock():
+        sys.exit(f"refusing to measure without holding {gpu_state.LOCK} (run under flock)")
+    import torch
+    import vllm
+    from vllm import LLM, SamplingParams
+    from vllm.inputs import TokensPrompt
+
+    rows, digest = wikitext.load_test()
+    snapshot = sorted(os.listdir(SNAPSHOTS))[-1]
+    meta = gpu_state.header(benchmark="e2e_ppl", config=config, model=MODEL, snapshot=snapshot,
+                            engine=PPL_ENGINE, vllm=vllm.__version__, torch=torch.__version__,
+                            vllm_plugins=os.environ.get("VLLM_PLUGINS"),
+                            dataset={"name": "Salesforce/wikitext", "config": "wikitext-2-raw-v1",
+                                     "split": "test", "file": wikitext.URL, "sha256": digest,
+                                     "rows": len(rows)})
+    meta["gpu_before"] = gpu_state.nvidia_smi()
+    llm = LLM(model=os.path.join(SNAPSHOTS, snapshot), **PPL_ENGINE)
+    ids = llm.get_tokenizer()("\n\n".join(rows), add_special_tokens=False).input_ids
+    windows = [ids[i:i + PPL_WINDOW] for i in range(0, len(ids), PPL_WINDOW)]
+    windows = [w for w in windows if len(w) > 1]
+    t0 = time.time()
+    outs = llm.generate([TokensPrompt(prompt_token_ids=w) for w in windows],
+                        SamplingParams(max_tokens=1, temperature=0.0, prompt_logprobs=0),
+                        use_tqdm=False)
+    elapsed = time.time() - t0
+    lps = [[o.prompt_logprobs[j][w[j]].logprob for j in range(1, len(w))]
+           for w, o in zip(windows, outs)]
+    scored = sum(map(len, lps))
+    nll = -sum(map(sum, lps)) / scored
+    res = {"tokens": len(ids), "window": PPL_WINDOW, "windows": len(windows),
+           "scored_tokens": scored, "nll": nll, "ppl": math.exp(nll), "score_s": elapsed,
+           "window_nll_sums": [-sum(x) for x in lps], "logprobs": lps,
+           "gpu_after": gpu_state.nvidia_smi()}
+    with open(out, "w") as f:
+        json.dump({**meta, **res}, f)
+    print(f"[{config}] wikitext-2 ppl {res['ppl']:.4f} over {scored} tokens", flush=True)
+    shut_down(llm)
 
 
 CONFIG_ENV = {
@@ -205,7 +266,7 @@ CONFIG_ENV = {
 }
 
 
-def run_config(tag, config, reference):
+def run_config(tag, config, reference, ppl=False):
     """One measurement process under the GPU lock; returns its result file."""
     base_env = dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
                     TOKENIZERS_PARALLELISM="false",
@@ -218,6 +279,8 @@ def run_config(tag, config, reference):
            "--one", config, "--out", out]
     if reference:
         cmd += ["--reference", reference]
+    if ppl:
+        cmd += ["--ppl"]
     t0 = time.time()
     with open(log, "w") as f:
         p = subprocess.run(cmd, env=dict(base_env, **CONFIG_ENV[config]), stdout=f,
@@ -270,6 +333,45 @@ def extra(config):
     write_combined(files)
 
 
+def logprob_diffs(a, b):
+    """Per-token logprob differences a - b over the same scored tokens."""
+    import numpy as np
+
+    d = np.concatenate([np.subtract(wa, wb) for wa, wb in zip(a, b)])
+    ad = np.abs(d)
+    return {"tokens": int(d.size), "mean_abs": float(ad.mean()),
+            "p99_abs": float(np.percentile(ad, 99)), "p999_abs": float(np.percentile(ad, 99.9)),
+            "max_abs": float(ad.max()), "mean_signed": float(d.mean()),
+            "identical": int((d == 0).sum())}
+
+
+def drive_ppl():
+    os.makedirs(RAW_DIR, exist_ok=True)
+    runs = []
+    for tag, config in PPL_ORDER:
+        path = run_config(f"{tag}", config, None, ppl=True)
+        with open(path) as f:
+            runs.append(json.load(f))
+    if len({r["scored_tokens"] for r in runs}) != 1:
+        sys.exit("runs scored different token counts")
+    names = [f"{r['config']} ({r['tag']})" for r in runs]
+    pairs = [(1, 0), (2, 0), (1, 2), (3, 0)]  # plugin, triton, plugin vs triton, stock vs stock
+    summary = {
+        "runs": [{k: v for k, v in r.items() if k != "logprobs"} for r in runs],
+        "logprob_diffs": [{"run": names[i], "vs": names[j],
+                           **logprob_diffs(runs[i]["logprobs"], runs[j]["logprobs"])}
+                          for i, j in pairs],
+        "raw_files": [os.path.relpath(os.path.join(RAW_DIR, f"{r['tag']}-{r['config']}.json"),
+                                      gpu_state.REPO) for r in runs],
+    }
+    path = os.path.join(OUT_DIR, "wikitext2_ppl.json")
+    with open(path, "w") as f:
+        json.dump(summary, f, indent=1)
+    for r, n in zip(runs, names):
+        print(f"{n}: ppl {r['ppl']:.4f}")
+    print(f"wrote {os.path.relpath(path, gpu_state.REPO)}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=5)
@@ -278,9 +380,15 @@ def main():
     ap.add_argument("--one", choices=list(CONFIG_ENV), help="one measurement process (internal)")
     ap.add_argument("--out")
     ap.add_argument("--reference")
+    ap.add_argument("--ppl", action="store_true",
+                    help="wikitext-2 perplexity of stock, plugin, triton and stock again")
     args = ap.parse_args()
-    if args.one:
+    if args.one and args.ppl:
+        run_one_ppl(args.one, args.out)
+    elif args.one:
         run_one(args.one, args.out, args.reference)
+    elif args.ppl:
+        drive_ppl()
     elif args.extra:
         extra(args.extra)
     else:

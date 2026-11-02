@@ -6,6 +6,7 @@ import statistics
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(REPO, "results", "e2e", "qwen3_8b_fp8.json")
+PPL = os.path.join(REPO, "results", "e2e", "wikitext2_ppl.json")
 
 
 def iqr(xs):
@@ -41,8 +42,38 @@ def compare(run, ref):
     diffs = [abs(x - y) for a, b in zip(tf, rtf) for x, y in zip(a, b)]
     return {"prompts": len(rg), "identical": exact, "prefix_tokens": prefix, "ref_tokens": total,
             "pos_match": pos_match, "pos_total": pos_total, "lp_greedy_max": lp_greedy,
-            "lp_forced_max": max(diffs), "lp_forced_median": statistics.median(diffs),
+            "lp_forced_max": max(diffs), "lp_forced_mean": statistics.fmean(diffs),
+            "lp_forced_p99": statistics.quantiles(diffs, n=100, method="inclusive")[98],
             "lp_forced_n": len(diffs)}
+
+
+def ppl_section():
+    if not os.path.exists(PPL):
+        return []
+    with open(PPL) as f:
+        p = json.load(f)
+    r0 = p["runs"][0]
+    ds = r0["dataset"]
+    out = ["\n## wikitext-2 perplexity\n",
+           f"Source: results/e2e/wikitext2_ppl.json (bench/e2e_vllm.py --ppl), commit "
+           f"{r0['git']['commit'][:10]}{' (dirty)' if r0['git']['dirty'] else ''}. "
+           f"{ds['config']} {ds['split']} ({ds['rows']} rows, {ds['file']}, sha256 "
+           f"{ds['sha256'][:12]}...), joined with blank lines: {r0['tokens']} tokens, "
+           f"{r0['windows']} non-overlapping windows of {r0['window']}, each scored on its own "
+           f"(prompt_logprobs; {r0['scored_tokens']} scored tokens). Engine: "
+           f"{json.dumps(r0['engine'])}.\n",
+           "| run | kernel (vLLM's log) | perplexity | mean NLL |", "|---|---|---|---|"]
+    for r in p["runs"]:
+        out.append(f"| {r['config']} ({r['tag']}) | {', '.join(r.get('selected_from_log', [])) or '?'}"
+                   f" | {r['ppl']:.4f} | {r['nll']:.5f} |")
+    out += ["\nPer-token logprob differences over the same scored tokens:\n",
+            "| run | vs | mean abs | p99 abs | p99.9 abs | max abs | mean signed | identical |",
+            "|---|---|---|---|---|---|---|---|"]
+    for d in p["logprob_diffs"]:
+        out.append(f"| {d['run']} | {d['vs']} | {d['mean_abs']:.2e} | {d['p99_abs']:.2e} | "
+                   f"{d['p999_abs']:.2e} | {d['max_abs']:.3f} | {d['mean_signed']:+.2e} | "
+                   f"{100 * d['identical'] / d['tokens']:.1f}% |")
+    return out
 
 
 def main():
@@ -94,8 +125,8 @@ def main():
                "in one prefill (prompt_logprobs).\n")
     out.append("| run | identical sequences | tokens before first divergence | position-wise match |"
                " max abs logprob diff, greedy (up to divergence) | teacher-forced max | "
-               "teacher-forced median |")
-    out.append("|---|---|---|---|---|---|---|")
+               "teacher-forced mean | teacher-forced p99 |")
+    out.append("|---|---|---|---|---|---|---|---|")
     def name(r):
         return f"{r['config']} ({os.path.basename(d['files'][runs.index(r)]).split('-')[0]})"
 
@@ -106,7 +137,8 @@ def main():
                        f"{c['prefix_tokens']}/{c['ref_tokens']}"
                        f" ({100 * c['prefix_tokens'] / c['ref_tokens']:.1f}%) | "
                        f"{100 * c['pos_match'] / c['pos_total']:.1f}% | {c['lp_greedy_max']:.4f} | "
-                       f"{c['lp_forced_max']:.4f} | {c['lp_forced_median']:.5f} |")
+                       f"{c['lp_forced_max']:.4f} | {c['lp_forced_mean']:.5f} | "
+                       f"{c['lp_forced_p99']:.4f} |")
 
     header = out[-2:]
     rows(ref, [r for r in runs if r is not ref])
@@ -123,6 +155,7 @@ def main():
                    + ", ".join(f"L={p['prompt_len']}: {p['tokens_per_s']:.0f} tok/s" for p in t["prefill"])
                    + "; TPOT " + ", ".join(f"B={p['batch']}: {p['tpot_ms']:.2f} ms" for p in t["decode"])
                    + " (vLLM's shipped default Triton config; none is tuned for this GPU).")
+    out += ppl_section()
     path = os.path.join(REPO, "results", "e2e", "summary.md")
     with open(path, "w") as f:
         f.write("\n".join(out) + "\n")
