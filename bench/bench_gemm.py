@@ -4,6 +4,12 @@ Implementations, each with the operands it would get in practice:
   blockfp8           this kernel on pre-quantized activations (M-major scales)
   blockfp8+quant     the same, plus vLLM's CUDA per-token-group quantization of
                      the bf16 activations (what a linear layer has to run)
+  blockfp8_fused     bf16 activations quantized inside the GEMM (gemm_bf16,
+                     M <= 256 only)
+  blockfp8_linear    blockfp8.linear, what the vLLM plugin runs: fused where the
+                     plan table prefers it, else blockfp8's own quantization
+                     kernel + the GEMM
+  vllm_group_quant   vLLM's per_token_group_quant_fp8 alone, for reference
   vllm_triton        vLLM 0.31 w8a8_triton_block_scaled_mm on pre-quantized
                      activations (row-major scales, as vLLM passes them)
   vllm_triton+quant  the same, plus the quantization (vLLM's W8A8 Triton path)
@@ -16,8 +22,13 @@ Implementations, each with the operands it would get in practice:
   cublas_bf16        torch.matmul in bf16 (cuBLAS), unquantized
 
 Timing: CUPTI kernel timestamps through torch.profiler. Every timed call is
-bracketed by two marker kernels (torch.cuda._sleep); in cold-L2 mode a read
-of a 256 MB buffer that evicts the operands runs before the opening marker. A call's time is the span from
+bracketed by two marker kernels (torch.cuda._sleep). In cold-L2 mode a read
+of a 256 MB buffer evicts everything and then the call's activation inputs
+are read once, before the opening marker: weights come from DRAM while the
+activations are L2-resident, as in a model where the previous layer has just
+written them (with the activations cold too, the GEMM-only time at M = 64
+was up to 2.6 us longer than right after the quantizer, which made "+q" look
+almost free there). A call's time is the span from
 its first kernel's start to its last kernel's end. One run times `calls`
 calls of every implementation in both L2 modes, implementations in a rotating
 order; the result is the median over >= 10 such interleaved runs, with the IQR.
@@ -50,8 +61,10 @@ LAYERS = {
     "down": (4096, 12288),
 }
 M_VALUES = [1, 4, 16, 64, 256, 1024, 4096, 8192]
-IMPLS = ["blockfp8", "blockfp8+quant", "vllm_triton", "vllm_triton+quant", "vllm_triton_tuned",
-         "vllm_marlin_fp8", "cublaslt_fp8", "cublas_bf16"]
+IMPLS = ["blockfp8", "blockfp8+quant", "blockfp8_fused", "blockfp8_linear", "vllm_group_quant",
+         "vllm_triton",
+         "vllm_triton+quant", "vllm_triton_tuned", "vllm_marlin_fp8", "cublaslt_fp8", "cublas_bf16"]
+FUSED_MAX_M = 256
 TUNED = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "gemm",
                      "triton_tuned_configs.json")
 MARKER = "spin_kernel"  # the kernel torch.cuda._sleep launches
@@ -108,28 +121,44 @@ def make_operands(n, k, m_max, seed=0):
     return {"w": w, "x": x, "b_q": b_q, "b_s": b_s, "w_pt": w_pt, "w_pt_s": (w_amax / 448).reshape(())}
 
 
+def touch(t):
+    """Read a tensor once, so that it is L2-resident (as a layer's input is)."""
+    if t.dtype == blockfp8.FP8_DTYPE:
+        return t.view(torch.uint8).sum(dtype=torch.int64)
+    return t.sum(dtype=torch.float32)
+
+
 def make_calls(impl, ops, m, triton):
-    """Returns (callable, info) for one implementation at batch size m."""
+    """Returns (callable, info) for one implementation at batch size m; info["_acts"]
+    lists the activation tensors the call reads (re-read into L2 in cold mode)."""
     x = ops["x"][:m]
     if impl == "blockfp8":
         a_q, a_s = blockfp8.quantize_activations(x)
-        return (lambda: blockfp8.gemm(a_q, a_s, ops["b_q"], ops["b_s"])), {}
+        return (lambda: blockfp8.gemm(a_q, a_s, ops["b_q"], ops["b_s"])), {"_acts": [a_q, a_s]}
     if impl == "blockfp8+quant":
         def fn():
             a_q, a_s = vllm_baselines.vllm_group_quant(x, column_major=True)
             return blockfp8.gemm(a_q, a_s, ops["b_q"], ops["b_s"])
-        return fn, {}
+        return fn, {"_acts": [x]}
+    if impl == "blockfp8_fused":
+        if m > FUSED_MAX_M:
+            return None, {}
+        return (lambda: blockfp8.gemm_bf16(x, ops["b_q"], ops["b_s"])), {"_acts": [x]}
+    if impl == "blockfp8_linear":
+        return (lambda: blockfp8.linear(x, ops["b_q"], ops["b_s"])), {"_acts": [x]}
+    if impl == "vllm_group_quant":
+        return (lambda: vllm_baselines.vllm_group_quant(x, column_major=True)), {"_acts": [x]}
     if impl == "vllm_triton":
         a_q, a_s = blockfp8.quantize_activations(x, column_major_scales=False)
         fn = lambda: triton.mm(a_q, ops["b_q"], a_s, ops["b_s"], [128, 128], torch.bfloat16)  # noqa
         fn()
-        return fn, {"triton_config": dict(triton.last)}
+        return fn, {"triton_config": dict(triton.last), "_acts": [a_q, a_s]}
     if impl == "vllm_triton+quant":
         def fn():
             a_q, a_s = vllm_baselines.vllm_group_quant(x, column_major=False)
             return triton.mm(a_q, ops["b_q"], a_s, ops["b_s"], [128, 128], torch.bfloat16)
         fn()
-        return fn, {"triton_config": dict(triton.last)}
+        return fn, {"triton_config": dict(triton.last), "_acts": [x]}
     if impl == "vllm_triton_tuned":
         import triton as tl_triton
 
@@ -149,12 +178,12 @@ def make_calls(impl, ops, m, triton):
                                 c.stride(-1), a_s.stride(-2), a_s.stride(-1), b_s.stride(1),
                                 b_s.stride(0), **cfg)
             return c
-        return fn, {"triton_config": cfg}
+        return fn, {"triton_config": cfg, "_acts": [a_q, a_s]}
     if impl == "vllm_marlin_fp8":
         if "marlin" not in ops:
             ops["marlin"] = vllm_baselines.MarlinFp8Linear(ops["b_q"], ops["b_s"])
         mar = ops["marlin"]
-        return (lambda: mar(x)), {}
+        return (lambda: mar(x)), {"_acts": [x]}
     if impl == "cublaslt_fp8":
         amax = x.abs().amax().float()
         s = (amax / 448).reshape(())
@@ -169,10 +198,11 @@ def make_calls(impl, ops, m, triton):
         xp = torch.nn.functional.pad(x, (0, 0, 0, mp - m)) if mp != m else x
         a_pt = (xp.float() / s).to(blockfp8.FP8_DTYPE)
         wt = ops["w_pt"].t()
+        info["_acts"] = [a_pt]
         return (lambda: torch._scaled_mm(a_pt, wt, s, ops["w_pt_s"], out_dtype=torch.bfloat16)), info
     if impl == "cublas_bf16":
         wt = ops["w"].t()
-        return (lambda: torch.matmul(x, wt)), {}
+        return (lambda: torch.matmul(x, wt)), {"_acts": [x]}
     raise ValueError(impl)
 
 
@@ -215,28 +245,36 @@ def measure_layer(name, n, k, m_values, runs, triton):
     state_before = gpu_state.nvidia_smi()
     for m in m_values:
         calls_per = 20 if m <= 256 else 10 if m <= 1024 else 5
-        fns, infos = {}, {}
+        fns, infos, acts = {}, {}, {}
         for impl in IMPLS:
-            fns[impl], infos[impl] = make_calls(impl, ops, m, triton)
+            fn, info = make_calls(impl, ops, m, triton)
+            if fn is None:
+                continue
+            acts[impl] = info.pop("_acts")
+            fns[impl], infos[impl] = fn, info
             for _ in range(3):
                 fns[impl]()  # warm-up / compile
+        impls = list(fns)
+        fused = blockfp8.prefers_fused(m, n, k)
         torch.cuda.synchronize()
         labels = []
         with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CUDA]) as prof:
             for r in range(runs):
-                order = IMPLS[r % len(IMPLS):] + IMPLS[: r % len(IMPLS)]
+                order = impls[r % len(impls):] + impls[: r % len(impls)]
                 for impl in order:
                     for mode in ("warm", "cold"):
                         for _ in range(calls_per):
                             if mode == "cold":
                                 torch.sum(flush, dim=0, dtype=torch.int64, out=flush_out)
+                                for t in acts[impl]:
+                                    touch(t)
                             torch.cuda._sleep(1)
                             fns[impl]()
                             torch.cuda._sleep(1)
                             labels.append((r, impl, mode))
             torch.cuda.synchronize()
         spans = split_spans(prof, labels)
-        for impl in IMPLS:
+        for impl in impls:
             for mode in ("warm", "cold"):
                 per_run = []
                 for r in range(runs):
@@ -249,7 +287,8 @@ def measure_layer(name, n, k, m_values, runs, triton):
                 results.append({
                     "layer": name, "N": n, "K": k, "M": m, "impl": impl, "l2": mode,
                     "median_us": med, "p25_us": q[0], "p75_us": q[2], "runs_us": per_run,
-                    "calls_per_run": calls_per, "tflops": flops / med / 1e6,
+                    "calls_per_run": calls_per, "linear_prefers_fused": fused,
+                    "tflops": flops / med / 1e6,
                     "gbps_fp8_operands": bytes_fp8 / med / 1e3, **infos[impl],
                 })
         acc = check_accuracy(ops, m, triton)
@@ -325,7 +364,7 @@ def main():
     meta = gpu_state.header(
         benchmark="gemm", runs=args.runs, impls=IMPLS, torch=torch.__version__, cuda=torch.version.cuda,
         vllm=vllm.__version__, triton=triton.__version__, device=torch.cuda.get_device_name(),
-        configs=blockfp8.configs(),
+        configs=blockfp8.configs(), fused_configs=blockfp8.fused_configs(),
         vllm_selected_block_fp8_kernel=vllm_baselines.selected_block_fp8_kernel(),
         vllm_tuned_config_files={
             name: get_w8a8_block_fp8_configs(n, k, 128, 128) is not None

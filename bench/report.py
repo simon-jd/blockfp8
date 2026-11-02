@@ -13,6 +13,9 @@ MICRO = os.path.join(REPO, "results", "micro")
 SHORT = {
     "blockfp8": "blockfp8",
     "blockfp8+quant": "blockfp8 +q",
+    "blockfp8_fused": "blockfp8 fused",
+    "blockfp8_linear": "blockfp8 linear",
+    "vllm_group_quant": "vLLM quant alone",
     "vllm_triton": "Triton",
     "vllm_triton+quant": "Triton +q",
     "vllm_triton_tuned": "Triton tuned",
@@ -43,6 +46,12 @@ def load():
     return g, peaks
 
 
+def linear_us(cell):
+    """blockfp8.linear's time and path (fused, or its own quantization + GEMM)."""
+    r = cell["blockfp8_linear"]
+    return r["median_us"], "fused" if r.get("linear_prefers_fused") else "quant+gemm"
+
+
 def table(g, peaks, l2):
     rows = [r for r in g["results"] if r["l2"] == l2]
     impls = [i for i in SHORT if any(r["impl"] == i for r in rows)]
@@ -52,19 +61,22 @@ def table(g, peaks, l2):
         n, k = lr[0]["N"], lr[0]["K"]
         out.append(f"\n### {layer} (N={n}, K={k}), {l2} L2, median us [IQR]\n")
         out.append("| M | " + " | ".join(SHORT[i] for i in impls)
-                   + " | vs Triton | vs Triton tuned | vs Marlin | blockfp8 TFLOPS | blockfp8 GB/s |")
-        out.append("|" + "---|" * (len(impls) + 6))
+                   + " | vs Triton | vs Triton tuned | linear runs | vs Marlin | blockfp8 TFLOPS |"
+                   " blockfp8 GB/s |")
+        out.append("|" + "---|" * (len(impls) + 7))
         for m in sorted({r["M"] for r in lr}):
             cell = {r["impl"]: r for r in lr if r["M"] == m}
             vals = [f"{cell[i]['median_us']:.1f} [{cell[i]['p25_us']:.1f}-{cell[i]['p75_us']:.1f}]"
-                    for i in impls]
+                    if i in cell else "-" for i in impls]
             ours = cell["blockfp8"]["median_us"]
             vs_t = cell["vllm_triton"]["median_us"] / ours
             vs_tt = cell["vllm_triton_tuned"]["median_us"] / ours if "vllm_triton_tuned" in cell \
                 else float("nan")
-            vs_m = cell["vllm_marlin_fp8"]["median_us"] / cell["blockfp8+quant"]["median_us"] \
-                if "vllm_marlin_fp8" in cell and "blockfp8+quant" in cell else float("nan")
-            out.append(f"| {m} | " + " | ".join(vals) + f" | {vs_t:.2f}x | {vs_tt:.2f}x | {vs_m:.2f}x | "
+            lin, path = linear_us(cell)
+            vs_m = cell["vllm_marlin_fp8"]["median_us"] / lin if "vllm_marlin_fp8" in cell \
+                else float("nan")
+            out.append(f"| {m} | " + " | ".join(vals) + f" | {vs_t:.2f}x | {vs_tt:.2f}x | {path} |"
+                       f" {vs_m:.2f}x | "
                        f"{cell['blockfp8']['tflops']:.0f} | {cell['blockfp8']['gbps_fp8_operands']:.0f} |")
     return "\n".join(out)
 
@@ -78,7 +90,8 @@ def chart(g, path):
     rows = [r for r in g["results"] if r["l2"] == "cold"]
     layers = list(dict.fromkeys(r["layer"] for r in rows))
     fig, axes = plt.subplots(1, len(layers), figsize=(4 * len(layers), 3.6), sharey=True)
-    series = [("vllm_marlin_fp8", "vs vLLM default: FP8 Marlin W8A16 (ours incl. quant)", "#d62728"),
+    series = [("vllm_marlin_fp8", "vs vLLM default: FP8 Marlin W8A16 (ours: linear, incl. quant)",
+               "#d62728"),
               ("vllm_triton", "vs vLLM Triton, default config (GEMM only)", "#1f77b4"),
               ("vllm_triton_tuned", "vs vLLM Triton, tuned here (GEMM only)", "#2ca02c"),
               ("cublaslt_fp8", "vs cuBLASLt FP8 per-tensor (GEMM only)", "#7f7f7f")]
@@ -86,9 +99,10 @@ def chart(g, path):
         lr = [r for r in rows if r["layer"] == layer]
         ms = sorted({r["M"] for r in lr})
         t = {(r["impl"], r["M"]): r["median_us"] for r in lr}
+        lin = {m: linear_us({r["impl"]: r for r in lr if r["M"] == m})[0] for m in ms}
         for impl, label, color in series:
-            ours = "blockfp8+quant" if impl == "vllm_marlin_fp8" else "blockfp8"
-            ys = [t[(impl, m)] / t[(ours, m)] for m in ms]
+            ys = [t[(impl, m)] / (lin[m] if impl == "vllm_marlin_fp8" else t[("blockfp8", m)])
+                  for m in ms]
             ax.plot(ms, ys, marker="o", label=label, color=color)
         ax.axhline(1.0, color="black", lw=0.8)
         ax.set_xscale("log", base=2)
@@ -115,9 +129,12 @@ def main():
         f"vLLM's block-FP8 kernel choice on this GPU: {g.get('vllm_selected_block_fp8_kernel')}.",
         f"Measured peaks: {json.dumps(peaks)}",
         "",
-        "+q = including the per-token-group activation quantization kernel (vLLM's CUDA one).",
+        "+q = including the per-token-group activation quantization kernel (vLLM's CUDA one);"
+        " fused = bf16 activations quantized inside the GEMM (M <= 256 only).",
+        "linear = blockfp8.linear, what the vLLM plugin runs: fused, or blockfp8's own quantization"
+        " kernel + GEMM, per the plan table (linear runs = which).",
         "vs Triton (tuned) = Triton time / blockfp8 time (GEMM only); "
-        "vs Marlin = Marlin time / (blockfp8 + quantization) time.",
+        "vs Marlin = Marlin time / blockfp8.linear time (quantization included).",
     ]
     clocks = []
     for st in g["gpu_state"].values():
