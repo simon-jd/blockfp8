@@ -35,10 +35,11 @@ Numbers come from `results/` (see the README for how they were measured).
 - **Cost:** a second set of accumulators in registers (64 floats per thread
   for the 128x128 tile). That is what caps the CTA tile at 128x128 with 8
   warps: a 64x64 warp tile would need 256 accumulator registers. Variant (b)
-  was built to lift that cap (`StepPromote` in `csrc/gemm_kernel.cuh`), but
-  it spills: instantiated for a 256x128 tile (64x64 per warp) ptxas reports
-  255 registers plus 160-224 bytes of stack, and even at 128x128 it spills
-  32-80 bytes, so no compiled configuration uses it.
+  was built to lift that cap, but it spills: instantiated for a 256x128 tile
+  (64x64 per warp) ptxas reported 255 registers plus 160-224 bytes of stack,
+  and even at 128x128 it spilled 32-80 bytes. No configuration used it, so it
+  was removed (the last version is `StepPromote` in `csrc/gemm_kernel.cuh` at
+  commit b3f50b9).
 
 ## 3. CuTe on top of mma.sync / ldmatrix / cp.async
 

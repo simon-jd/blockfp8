@@ -47,18 +47,13 @@ struct KernelParams {
   float eps;  // fused quantization: the floor of each group's amax
 };
 
-// StepPromote = false: MMAs of a K tile accumulate into a full-size FP32
-//   partial, promoted once per tile (two accumulator sets in registers).
-// StepPromote = true: every k32 MMA starts from zero and is promoted right
-//   away (4x the FMAs, but no second accumulator set), which frees the
-//   registers for a 64x64 warp tile and so a larger CTA tile.
+// MMAs of a K tile accumulate into a full-size FP32 partial, promoted once
+// per tile (two accumulator sets in registers).
 // MinBlocks: CTAs per SM the register allocation must allow (__launch_bounds__).
-template <int BM_, int BN_, int Stages_, int WarpsM_, int WarpsN_, int MinBlocks_ = 1,
-          bool StepPromote_ = false>
+template <int BM_, int BN_, int Stages_, int WarpsM_, int WarpsN_, int MinBlocks_ = 1>
 struct Config {
   static constexpr int BM = BM_, BN = BN_, BK = 128, Stages = Stages_;
   static constexpr int WarpsM = WarpsM_, WarpsN = WarpsN_, MinBlocks = MinBlocks_;
-  static constexpr bool StepPromote = StepPromote_;
   static constexpr int kThreads = 32 * WarpsM * WarpsN;
   using T = cutlass::float_e4m3_t;
 
@@ -235,8 +230,6 @@ __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(Ker
   Tensor tCrB = thr_mma.partition_fragment_B(sB(_, _, 0));  // (MMA,MMA_N,MMA_K)
   Tensor acc = partition_fragment_C(mma, Shape<Int<BM>, Int<BN>>{});  // (MMA,MMA_M,MMA_N) fp32
   Tensor part = make_fragment_like(acc);
-  Tensor zero = make_fragment_like(acc(_, 0, 0));  // C operand of step-promoted MMAs
-  clear(zero);
   Tensor zeros_c = make_fragment_like(acc);  // C operand of a K tile's first MMAs
   clear(zeros_c);
   Tensor tCcC = thr_mma.partition_C(make_identity_tensor(make_shape(Int<BM>{}, Int<BN>{})));
@@ -343,25 +336,11 @@ __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(Ker
         smem_write = smem_read;
         smem_read = smem_read == kStages - 1 ? 0 : smem_read + 1;
       }
-      if constexpr (!Cfg::StepPromote) {
-        // The first k32 step starts from zero (C = 0) instead of clearing part.
-        if (kb == 0)
-          gemm(mma, part, tCrA(_, _, kb), tCrB(_, _, kb), zeros_c);
-        else
-          gemm(mma, tCrA(_, _, kb), tCrB(_, _, kb), part);
-      } else {
-        CUTE_UNROLL
-        for (int n = 0; n < kMmaN; ++n) {
-          CUTE_UNROLL
-          for (int m = 0; m < kMmaM; ++m) {
-            Tensor step = make_fragment_like(zero);
-            gemm(mma, step, tCrA(_, m, kb), tCrB(_, n, kb), zero);
-            CUTE_UNROLL
-            for (int v = 0; v < kVals; ++v)
-              acc(v, m, n) = fmaf(step(v), scale[v / 2][m], acc(v, m, n));
-          }
-        }
-      }
+      // The first k32 step starts from zero (C = 0) instead of clearing part.
+      if (kb == 0)
+        gemm(mma, part, tCrA(_, _, kb), tCrB(_, _, kb), zeros_c);
+      else
+        gemm(mma, tCrA(_, _, kb), tCrB(_, _, kb), part);
       if constexpr (kFuseQuant) {
         if (kb == 0) {
           // After this K tile's first MMAs are issued: quantize tile kt + 1
@@ -373,16 +352,14 @@ __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(Ker
       }
     }
 
-    if constexpr (!Cfg::StepPromote) {
-      // Promote: one FMA per accumulator per scale block.
+    // Promote: one FMA per accumulator per scale block.
+    CUTE_UNROLL
+    for (int n = 0; n < kMmaN; ++n) {
       CUTE_UNROLL
-      for (int n = 0; n < kMmaN; ++n) {
+      for (int m = 0; m < kMmaM; ++m) {
         CUTE_UNROLL
-        for (int m = 0; m < kMmaM; ++m) {
-          CUTE_UNROLL
-          for (int v = 0; v < kVals; ++v) {
-            acc(v, m, n) = fmaf(part(v, m, n), scale[v / 2][m], acc(v, m, n));
-          }
+        for (int v = 0; v < kVals; ++v) {
+          acc(v, m, n) = fmaf(part(v, m, n), scale[v / 2][m], acc(v, m, n));
         }
       }
     }
