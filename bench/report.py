@@ -15,6 +15,7 @@ SHORT = {
     "blockfp8+quant": "blockfp8 +q",
     "vllm_triton": "Triton",
     "vllm_triton+quant": "Triton +q",
+    "vllm_triton_tuned": "Triton tuned",
     "vllm_marlin_fp8": "Marlin W8A16",
     "cublaslt_fp8": "cuBLASLt FP8/tensor",
     "cublas_bf16": "cuBLAS BF16",
@@ -51,17 +52,19 @@ def table(g, peaks, l2):
         n, k = lr[0]["N"], lr[0]["K"]
         out.append(f"\n### {layer} (N={n}, K={k}), {l2} L2, median us [IQR]\n")
         out.append("| M | " + " | ".join(SHORT[i] for i in impls)
-                   + " | vs Triton | vs Marlin | blockfp8 TFLOPS | blockfp8 GB/s |")
-        out.append("|" + "---|" * (len(impls) + 5))
+                   + " | vs Triton | vs Triton tuned | vs Marlin | blockfp8 TFLOPS | blockfp8 GB/s |")
+        out.append("|" + "---|" * (len(impls) + 6))
         for m in sorted({r["M"] for r in lr}):
             cell = {r["impl"]: r for r in lr if r["M"] == m}
             vals = [f"{cell[i]['median_us']:.1f} [{cell[i]['p25_us']:.1f}-{cell[i]['p75_us']:.1f}]"
                     for i in impls]
             ours = cell["blockfp8"]["median_us"]
             vs_t = cell["vllm_triton"]["median_us"] / ours
+            vs_tt = cell["vllm_triton_tuned"]["median_us"] / ours if "vllm_triton_tuned" in cell \
+                else float("nan")
             vs_m = cell["vllm_marlin_fp8"]["median_us"] / cell["blockfp8+quant"]["median_us"] \
                 if "vllm_marlin_fp8" in cell and "blockfp8+quant" in cell else float("nan")
-            out.append(f"| {m} | " + " | ".join(vals) + f" | {vs_t:.2f}x | {vs_m:.2f}x | "
+            out.append(f"| {m} | " + " | ".join(vals) + f" | {vs_t:.2f}x | {vs_tt:.2f}x | {vs_m:.2f}x | "
                        f"{cell['blockfp8']['tflops']:.0f} | {cell['blockfp8']['gbps_fp8_operands']:.0f} |")
     return "\n".join(out)
 
@@ -75,15 +78,16 @@ def chart(g, path):
     rows = [r for r in g["results"] if r["l2"] == "cold"]
     layers = list(dict.fromkeys(r["layer"] for r in rows))
     fig, axes = plt.subplots(1, len(layers), figsize=(4 * len(layers), 3.6), sharey=True)
-    series = [("vllm_triton+quant", "vs vLLM Triton (both incl. quant)", "#1f77b4"),
-              ("vllm_marlin_fp8", "vs vLLM default, FP8 Marlin W8A16", "#d62728"),
+    series = [("vllm_marlin_fp8", "vs vLLM default: FP8 Marlin W8A16 (ours incl. quant)", "#d62728"),
+              ("vllm_triton", "vs vLLM Triton, default config (GEMM only)", "#1f77b4"),
+              ("vllm_triton_tuned", "vs vLLM Triton, tuned here (GEMM only)", "#2ca02c"),
               ("cublaslt_fp8", "vs cuBLASLt FP8 per-tensor (GEMM only)", "#7f7f7f")]
     for ax, layer in zip(axes, layers):
         lr = [r for r in rows if r["layer"] == layer]
         ms = sorted({r["M"] for r in lr})
         t = {(r["impl"], r["M"]): r["median_us"] for r in lr}
         for impl, label, color in series:
-            ours = "blockfp8" if impl == "cublaslt_fp8" else "blockfp8+quant"
+            ours = "blockfp8+quant" if impl == "vllm_marlin_fp8" else "blockfp8"
             ys = [t[(impl, m)] / t[(ours, m)] for m in ms]
             ax.plot(ms, ys, marker="o", label=label, color=color)
         ax.axhline(1.0, color="black", lw=0.8)
@@ -112,7 +116,7 @@ def main():
         f"Measured peaks: {json.dumps(peaks)}",
         "",
         "+q = including the per-token-group activation quantization kernel (vLLM's CUDA one).",
-        "vs Triton = Triton time / blockfp8 time (GEMM only); "
+        "vs Triton (tuned) = Triton time / blockfp8 time (GEMM only); "
         "vs Marlin = Marlin time / (blockfp8 + quantization) time.",
     ]
     clocks = []
