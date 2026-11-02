@@ -1,4 +1,5 @@
-"""Turn results/gemm/qwen3_8b.json (+ results/micro) into tables and a chart.
+"""Turn results/gemm/qwen3_8b.json (+ results/micro, + the off-grid batch sizes
+in results/gemm/qwen3_8b_offgrid.json) into tables and a chart.
 
 Writes results/gemm/summary.md and docs/img/speedup.svg. No GPU needed.
 """
@@ -9,6 +10,7 @@ import statistics
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GEMM = os.path.join(REPO, "results", "gemm", "qwen3_8b.json")
+OFFGRID = os.path.join(REPO, "results", "gemm", "qwen3_8b_offgrid.json")
 MICRO = os.path.join(REPO, "results", "micro")
 SHORT = {
     "blockfp8": "blockfp8",
@@ -81,6 +83,39 @@ def table(g, peaks, l2):
     return "\n".join(out)
 
 
+def offgrid(path):
+    """Cold-L2 ratios at batch sizes none of the tables was tuned on."""
+    if not os.path.exists(path):
+        return ""
+    with open(path) as f:
+        g = json.load(f)
+    rows = [r for r in g["results"] if r["l2"] == "cold"]
+    out = ["\n## Batch sizes outside the tuning grid (cold L2)\n",
+           f"Source: results/gemm/qwen3_8b_offgrid.json, commit {g['git']['commit'][:10]}"
+           f"{' (dirty)' if g['git']['dirty'] else ''}, {g['time_utc']}, {g['runs']} interleaved runs."
+           " The plan tables and the tuned Triton configs only have M = "
+           "1, 4, 16, 64, 256, 1024, 4096, 8192: blockfp8 takes the entry with the smallest "
+           "tabulated M >= M, tuned Triton the nearest tabulated M (vLLM's rule; Triton M column).",
+           "Ratios are baseline time / blockfp8 time (Marlin: / blockfp8.linear time).\n",
+           "| layer | M | blockfp8 us | linear us (runs) | vs Triton | vs Triton tuned (M) |"
+           " vs Marlin | vs cuBLASLt FP8/tensor |",
+           "|---|---|---|---|---|---|---|---|"]
+    for layer in dict.fromkeys(r["layer"] for r in rows):
+        lr = [r for r in rows if r["layer"] == layer]
+        for m in sorted({r["M"] for r in lr}):
+            c = {r["impl"]: r for r in lr if r["M"] == m}
+            ours = c["blockfp8"]["median_us"]
+            lin, path_ = linear_us(c)
+            tt = c.get("vllm_triton_tuned")
+            out.append(
+                f"| {layer} | {m} | {ours:.1f} | {lin:.1f} ({path_}) | "
+                f"{c['vllm_triton']['median_us'] / ours:.2f}x | "
+                + (f"{tt['median_us'] / ours:.2f}x ({tt.get('triton_config_m', '?')})" if tt else "-")
+                + f" | {c['vllm_marlin_fp8']['median_us'] / lin:.2f}x | "
+                f"{c['cublaslt_fp8']['median_us'] / ours:.2f}x |")
+    return "\n".join(out) + "\n"
+
+
 def chart(g, path):
     import matplotlib
 
@@ -143,7 +178,8 @@ def main():
     if clocks:
         head.append(f"SM clock during the runs (nvidia-smi, 1 s samples): median "
                     f"{statistics.median(clocks):.0f} MHz, min {min(clocks):.0f}, max {max(clocks):.0f}.")
-    body = "\n".join(head) + "\n" + table(g, peaks, "cold") + "\n" + table(g, peaks, "warm") + "\n"
+    body = ("\n".join(head) + "\n" + table(g, peaks, "cold") + "\n" + table(g, peaks, "warm") + "\n"
+            + offgrid(OFFGRID))
     with open(os.path.join(REPO, "results", "gemm", "summary.md"), "w") as f:
         f.write(body)
     chart(g, os.path.join(REPO, "docs", "img", "speedup.svg"))

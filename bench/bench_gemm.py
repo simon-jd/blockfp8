@@ -35,6 +35,10 @@ order; the result is the median over >= 10 such interleaved runs, with the IQR.
 
 Run it holding the GPU lock:
     flock /var/tmp/rtx4090.lock .venv/bin/python bench/bench_gemm.py
+Batch sizes outside the tuning grid (plan tables and Triton configs tuned on
+M_VALUES; held out):
+    flock /var/tmp/rtx4090.lock .venv/bin/python bench/bench_gemm.py --m 2 8 32 100 512 3000 \
+        --out results/gemm/qwen3_8b_offgrid.json
 """
 
 import argparse
@@ -165,7 +169,9 @@ def make_calls(impl, ops, m, triton):
         with open(TUNED) as f:
             layer = next(v for v in json.load(f)["layers"].values()
                          if v["N"] == ops["b_q"].shape[0] and v["K"] == ops["b_q"].shape[1])
-        cfg = {k: v for k, v in layer["configs"][str(m)].items() if k != "error"}
+        # vLLM's rule for an M the file has no entry for: the nearest tabulated M.
+        tuned_m = min(layer["configs"], key=lambda x: abs(int(x) - m))
+        cfg = {k: v for k, v in layer["configs"][tuned_m].items() if k != "error"}
         a_q, a_s = blockfp8.quantize_activations(x, column_major_scales=False)
         b, b_s = ops["b_q"], ops["b_s"]
         n, k = b.shape
@@ -178,7 +184,7 @@ def make_calls(impl, ops, m, triton):
                                 c.stride(-1), a_s.stride(-2), a_s.stride(-1), b_s.stride(1),
                                 b_s.stride(0), **cfg)
             return c
-        return fn, {"triton_config": cfg, "_acts": [a_q, a_s]}
+        return fn, {"triton_config": cfg, "triton_config_m": int(tuned_m), "_acts": [a_q, a_s]}
     if impl == "vllm_marlin_fp8":
         if "marlin" not in ops:
             ops["marlin"] = vllm_baselines.MarlinFp8Linear(ops["b_q"], ops["b_s"])
