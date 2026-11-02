@@ -28,6 +28,15 @@ static double e4m3_value(uint8_t c) {
 }
 static bool e4m3_finite(uint8_t c) { return (c & 0x7f) != 0x7f; }
 
+// Round to bf16, nearest even (from FP32; no NaN or Inf here).
+static float bf16_rn(float f) {
+  uint32_t u;
+  std::memcpy(&u, &f, 4);
+  u = (u + 0x7FFFu + ((u >> 16) & 1u)) & 0xFFFF0000u;
+  std::memcpy(&f, &u, 4);
+  return f;
+}
+
 static uint8_t e4m3_exact(double v) {
   for (int c = 0; c < 256; ++c)
     if (e4m3_finite(uint8_t(c)) && e4m3_value(uint8_t(c)) == v) return uint8_t(c);
@@ -357,10 +366,17 @@ int main() {
       last_L = r.L;
     }
     auto d = bt->run(r.f16, r.P);
-    std::vector<double> rel_mag, rel_exact, host_rel_mag;
+    // bf16_*: what a bf16 output adds, on the same outputs (the exact result
+    // rounded to bf16, and this run's FP32 result rounded to bf16).
+    std::vector<double> rel_mag, rel_exact, host_rel_mag, bf16_exact, bf16_out;
     for (size_t i = 0; i < d.size(); ++i) {
       rel_mag.push_back(double(std::fabs(d[i] - ex[i]) / mag[i]));
-      if (std::fabs(ex[i]) > 0) rel_exact.push_back(double(std::fabs(d[i] - ex[i]) / std::fabs(ex[i])));
+      if (std::fabs(ex[i]) > 0) {
+        const long double ax = std::fabs(ex[i]);
+        rel_exact.push_back(double(std::fabs(d[i] - ex[i]) / ax));
+        bf16_exact.push_back(double(std::fabs(bf16_rn(float(ex[i])) - ex[i]) / ax));
+        bf16_out.push_back(double(std::fabs(bf16_rn(d[i]) - ex[i]) / ax));
+      }
       host_rel_mag.push_back(double(std::fabs(host[i] - ex[i]) / mag[i]));
     }
     std::printf("%s{\"K\": %d, \"promote_every_mma\": %d, \"accumulator\": \"%s\", \"outputs\": %zu, ",
@@ -370,6 +386,10 @@ int main() {
     print_stats("err_over_abs_exact", stats_of(rel_exact));
     std::printf(", ");
     print_stats("host_fp32_sequential_err_over_abs_sum", stats_of(host_rel_mag));
+    std::printf(", ");
+    print_stats("bf16_rounded_exact_err_over_abs_exact", stats_of(bf16_exact));
+    std::printf(", ");
+    print_stats("bf16_rounded_result_err_over_abs_exact", stats_of(bf16_out));
     std::printf("}");
     first = false;
   }
