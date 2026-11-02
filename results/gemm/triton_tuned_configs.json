@@ -1,0 +1,335 @@
+{
+ "header": {
+  "time_utc": "2026-11-02T00:04:00Z",
+  "git": {
+   "commit": "c419f9428c217c4bfad0a9b290570348cc38ff7a",
+   "dirty": false,
+   "cutlass_commit": "2c85f497547eb441f0fe80bfb0fb2e6f9add1719"
+  },
+  "holds_gpu_lock": true,
+  "benchmark": "tune_triton",
+  "triton": "3.7.1"
+ },
+ "gpu_before": {
+  "timestamp": "2026/11/01 16:04:00.388",
+  "name": "NVIDIA GeForce RTX 4090",
+  "driver_version": "595.99.02",
+  "pstate": "P3",
+  "clocks.sm": "630 MHz",
+  "clocks.mem": "810 MHz",
+  "clocks.max.sm": "3105 MHz",
+  "temperature.gpu": "55",
+  "power.draw": "48.64 W",
+  "power.limit": "450.00 W",
+  "utilization.gpu": "0 %",
+  "memory.used": "801 MiB",
+  "memory.total": "24564 MiB",
+  "clocks_event_reasons.active": "0x0000000000000000",
+  "compute_apps": [
+   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 189 MiB"
+  ]
+ },
+ "layers": {
+  "qkv": {
+   "N": 6144,
+   "K": 4096,
+   "configs": {
+    "1": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 4
+    },
+    "4": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 3
+    },
+    "16": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 4
+    },
+    "64": {
+     "BLOCK_SIZE_M": 32,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "256": {
+     "BLOCK_SIZE_M": 64,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "1024": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 8,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "4096": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 8,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "8192": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 8,
+     "num_warps": 4,
+     "num_stages": 3
+    }
+   }
+  },
+  "o": {
+   "N": 4096,
+   "K": 4096,
+   "configs": {
+    "1": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 3
+    },
+    "4": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 3
+    },
+    "16": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "64": {
+     "BLOCK_SIZE_M": 32,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 4
+    },
+    "256": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "1024": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "4096": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 8,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "8192": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 8,
+     "num_warps": 4,
+     "num_stages": 3
+    }
+   }
+  },
+  "gate_up": {
+   "N": 24576,
+   "K": 4096,
+   "configs": {
+    "1": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 128,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 4
+    },
+    "4": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "16": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "64": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 128,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "256": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "1024": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 8,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "4096": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "8192": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 3
+    }
+   }
+  },
+  "down": {
+   "N": 4096,
+   "K": 12288,
+   "configs": {
+    "1": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 3
+    },
+    "4": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 3
+    },
+    "16": {
+     "BLOCK_SIZE_M": 16,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 3
+    },
+    "64": {
+     "BLOCK_SIZE_M": 32,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 4
+    },
+    "256": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 64,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 4,
+     "num_stages": 4
+    },
+    "1024": {
+     "BLOCK_SIZE_M": 128,
+     "BLOCK_SIZE_N": 128,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 32,
+     "num_warps": 8,
+     "num_stages": 3
+    },
+    "4096": {
+     "BLOCK_SIZE_M": 64,
+     "BLOCK_SIZE_N": 128,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 8,
+     "num_warps": 4,
+     "num_stages": 3
+    },
+    "8192": {
+     "BLOCK_SIZE_M": 64,
+     "BLOCK_SIZE_N": 128,
+     "BLOCK_SIZE_K": 128,
+     "GROUP_SIZE_M": 8,
+     "num_warps": 4,
+     "num_stages": 3
+    }
+   }
+  }
+ },
+ "elapsed_s": 221.18379712104797,
+ "gpu_after": {
+  "timestamp": "2026/11/01 16:07:41.630",
+  "name": "NVIDIA GeForce RTX 4090",
+  "driver_version": "595.99.02",
+  "pstate": "P2",
+  "clocks.sm": "2760 MHz",
+  "clocks.mem": "10251 MHz",
+  "clocks.max.sm": "3105 MHz",
+  "temperature.gpu": "69",
+  "power.draw": "276.83 W",
+  "power.limit": "450.00 W",
+  "utilization.gpu": "100 %",
+  "memory.used": "4600 MiB",
+  "memory.total": "24564 MiB",
+  "clocks_event_reasons.active": "0x0000000000000000",
+  "compute_apps": [
+   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 188 MiB",
+   "215564, .venv/bin/python, 3902 MiB"
+  ]
+ }
+}
