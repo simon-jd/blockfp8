@@ -4,9 +4,13 @@ only the untuned default vLLM falls back to on an RTX 4090.
 The search space follows vLLM's own tuning script
 (benchmarks/kernels/benchmark_w8a8_block_fp8.py), trimmed where an option
 cannot matter (BLOCK_K is the 128-wide scale block; tiles taller than 2*M only
-add masked rows). Timing: CUDA events, warm L2, median of 3 x 10 calls.
+add masked rows). Every candidate is timed with CUDA events in warm L2
+(median of 3 x 10 calls); the five fastest are then re-timed in the harness
+the comparison uses (bench_gemm.time_calls: cold L2, CUPTI spans, 10
+interleaved runs) and the fastest there is kept.
 Output: results/gemm/triton_tuned_configs.json, one entry per layer in the
-file format vLLM reads from its configs directory ({M: config}).
+file format vLLM reads from its configs directory ({M: config}), plus the
+re-timed candidates.
 
     flock /var/tmp/rtx4090.lock .venv/bin/python bench/tune_triton.py
 """
@@ -25,7 +29,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import gpu_state  # noqa: E402
 
 import blockfp8  # noqa: E402
-from bench_gemm import LAYERS, M_VALUES  # noqa: E402
+from bench_gemm import LAYERS, M_VALUES, calls_per_run, time_calls  # noqa: E402
+
+TOP = 5  # warm-L2 candidates re-timed in the cold harness
+COLD_RUNS = 10
 
 
 def candidates(m):
@@ -64,7 +71,7 @@ def main():
     for name, (n, k) in LAYERS.items():
         g = torch.Generator(device="cuda").manual_seed(0)
         b, sb = blockfp8.quantize_weights(torch.randn(n, k, generator=g, device="cuda") * 0.02)
-        best = {}
+        best, retimed = {}, {}
         for m in M_VALUES:
             a, sa = blockfp8.quantize_activations(torch.randn(m, k, generator=g, device="cuda"),
                                                   column_major_scales=False)
@@ -84,10 +91,20 @@ def main():
                 except Exception as ex:  # out of shared memory / registers
                     timed.append((float("inf"), {**cfg, "error": type(ex).__name__}))
             timed.sort(key=lambda t: t[0])
-            best[str(m)] = timed[0][1]
-            print(f"{name} M={m}: best {timed[0][0]:.1f} us {timed[0][1]} ({len(timed)} tried)",
+            top = [(w, cfg) for w, cfg in timed[:TOP] if w != float("inf")]
+            fns = {i: (lambda cfg=cfg: run(cfg)) for i, (_, cfg) in enumerate(top)}
+            cold = time_calls(fns, {i: [a, sa] for i in fns}, COLD_RUNS, calls_per_run(m),
+                              modes=("cold",))
+            cands = [{"config": cfg, "warm_us": w, "warm_rank": i + 1,
+                      "cold_us": statistics.median(cold[(i, "cold")]),
+                      "cold_runs_us": cold[(i, "cold")]} for i, (w, cfg) in enumerate(top)]
+            cands.sort(key=lambda c: c["cold_us"])
+            best[str(m)] = cands[0]["config"]
+            retimed[str(m)] = cands
+            print(f"{name} M={m}: warm best {top[0][0]:.1f} us; cold best {cands[0]['cold_us']:.1f} us"
+                  f" (warm rank {cands[0]['warm_rank']}) {cands[0]['config']} ({len(timed)} tried)",
                   flush=True)
-        out["layers"][name] = {"N": n, "K": k, "configs": best}
+        out["layers"][name] = {"N": n, "K": k, "configs": best, "cold_retimed_top": retimed}
     out["elapsed_s"] = time.time() - t0
     out["gpu_after"] = gpu_state.nvidia_smi()
     path = os.path.join(gpu_state.REPO, "results", "gemm", "triton_tuned_configs.json")

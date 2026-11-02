@@ -235,16 +235,55 @@ def check_accuracy(ops, m, triton):
     return out
 
 
+_FLUSH = []
+
+
+def time_calls(fns, acts, runs, calls_per, modes=("warm", "cold")):
+    """The timing harness: `runs` interleaved runs of `calls_per` calls of every
+    callable in fns (rotating order) in each L2 mode, each call bracketed by
+    marker kernels and timed from CUPTI. In cold mode a 256 MB read evicts L2
+    and then acts[name] are read back in. Returns {(name, mode): [median span
+    per run, us]}."""
+    if not _FLUSH:
+        _FLUSH.append((torch.empty(256 << 20, dtype=torch.uint8, device="cuda"),
+                       torch.empty((), dtype=torch.int64, device="cuda")))
+    flush, flush_out = _FLUSH[0]
+    impls = list(fns)
+    torch.cuda.synchronize()
+    labels = []
+    with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CUDA]) as prof:
+        for r in range(runs):
+            order = impls[r % len(impls):] + impls[: r % len(impls)]
+            for impl in order:
+                for mode in modes:
+                    for _ in range(calls_per):
+                        if mode == "cold":
+                            torch.sum(flush, dim=0, dtype=torch.int64, out=flush_out)
+                            for t in acts[impl]:
+                                touch(t)
+                        torch.cuda._sleep(1)
+                        fns[impl]()
+                        torch.cuda._sleep(1)
+                        labels.append((r, impl, mode))
+        torch.cuda.synchronize()
+    per = {}
+    for (r, impl, mode), span in split_spans(prof, labels):
+        per.setdefault((impl, mode), [[] for _ in range(runs)])[r].append(span)
+    return {key: [statistics.median(v) for v in spans] for key, spans in per.items()}
+
+
+def calls_per_run(m):
+    return 20 if m <= 256 else 10 if m <= 1024 else 5
+
+
 def measure_layer(name, n, k, m_values, runs, triton):
     ops = make_operands(n, k, max(m_values))
-    flush = torch.empty(256 << 20, dtype=torch.uint8, device="cuda")
-    flush_out = torch.empty((), dtype=torch.int64, device="cuda")
     results = []
     sampler = Sampler()
     sampler.start()
     state_before = gpu_state.nvidia_smi()
     for m in m_values:
-        calls_per = 20 if m <= 256 else 10 if m <= 1024 else 5
+        calls_per = calls_per_run(m)
         fns, infos, acts = {}, {}, {}
         for impl in IMPLS:
             fn, info = make_calls(impl, ops, m, triton)
@@ -256,30 +295,10 @@ def measure_layer(name, n, k, m_values, runs, triton):
                 fns[impl]()  # warm-up / compile
         impls = list(fns)
         fused = blockfp8.prefers_fused(m, n, k)
-        torch.cuda.synchronize()
-        labels = []
-        with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CUDA]) as prof:
-            for r in range(runs):
-                order = impls[r % len(impls):] + impls[: r % len(impls)]
-                for impl in order:
-                    for mode in ("warm", "cold"):
-                        for _ in range(calls_per):
-                            if mode == "cold":
-                                torch.sum(flush, dim=0, dtype=torch.int64, out=flush_out)
-                                for t in acts[impl]:
-                                    touch(t)
-                            torch.cuda._sleep(1)
-                            fns[impl]()
-                            torch.cuda._sleep(1)
-                            labels.append((r, impl, mode))
-            torch.cuda.synchronize()
-        spans = split_spans(prof, labels)
+        timed = time_calls(fns, acts, runs, calls_per)
         for impl in impls:
             for mode in ("warm", "cold"):
-                per_run = []
-                for r in range(runs):
-                    v = [s for (rr, ii, mm), s in spans if rr == r and ii == impl and mm == mode]
-                    per_run.append(statistics.median(v))
+                per_run = timed[(impl, mode)]
                 q = statistics.quantiles(per_run, n=4, method="inclusive")
                 med = statistics.median(per_run)
                 flops = 2.0 * m * n * k
