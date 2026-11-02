@@ -1,5 +1,7 @@
 // Compiled kernel configurations, the split-K plan and the launcher.
 #include <algorithm>
+#include <atomic>
+#include <cstdint>
 #include <cstdio>
 #include <stdexcept>
 #include <string>
@@ -16,15 +18,27 @@ struct ConfigEntry {
   void (*launch)(const KernelParams&, dim3, cudaStream_t);
 };
 
+void check_cuda(cudaError_t e, const char* what) {
+  if (e == cudaSuccess) return;
+  cudaGetLastError();  // the error is not sticky; do not leave it for the next launch check
+  throw std::runtime_error(std::string("blockfp8: ") + what + ": " + cudaGetErrorString(e));
+}
+
 template <class Cfg, bool kSplitK, bool kFuse>
 void launch_cfg(const KernelParams& kp, dim3 grid, cudaStream_t stream) {
   auto kernel = gemm_kernel<Cfg, kSplitK, kFuse>;
   constexpr int smem = kFuse ? Cfg::kSmemBytesFused : Cfg::kSmemBytes;
-  static bool attr_set = [&] {
-    cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem);
-    return true;
-  }();
-  (void)attr_set;
+  // The shared-memory limit is a per-device attribute of the kernel: set it on
+  // the first launch on each device (bit d of done; devices >= 64 every time).
+  static std::atomic<uint64_t> done{0};
+  int dev = 0;
+  check_cuda(cudaGetDevice(&dev), "cudaGetDevice");
+  const uint64_t bit = dev < 64 ? uint64_t(1) << dev : 0;
+  if (!(done.load(std::memory_order_acquire) & bit) || !bit) {
+    check_cuda(cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem),
+               "cudaFuncSetAttribute(MaxDynamicSharedMemorySize)");
+    done.fetch_or(bit, std::memory_order_release);
+  }
   kernel<<<grid, Cfg::kThreads, smem, stream>>>(kp);
 }
 
