@@ -96,15 +96,33 @@ def main():
                " max abs logprob diff, greedy (up to divergence) | teacher-forced max | "
                "teacher-forced median |")
     out.append("|---|---|---|---|---|---|---|")
-    for r in runs:
-        if r is ref:
-            continue
-        c = compare(r, ref)
-        name = f"{r['config']} ({os.path.basename(d['files'][runs.index(r)]).split('-')[0]})"
-        out.append(f"| {name} | {c['identical']}/{c['prompts']} | {c['prefix_tokens']}/{c['ref_tokens']}"
-                   f" ({100 * c['prefix_tokens'] / c['ref_tokens']:.1f}%) | "
-                   f"{100 * c['pos_match'] / c['pos_total']:.1f}% | {c['lp_greedy_max']:.4f} | "
-                   f"{c['lp_forced_max']:.4f} | {c['lp_forced_median']:.5f} |")
+    def name(r):
+        return f"{r['config']} ({os.path.basename(d['files'][runs.index(r)]).split('-')[0]})"
+
+    def rows(against, others):
+        for r in others:
+            c = compare(r, against)
+            out.append(f"| {name(r)} | {c['identical']}/{c['prompts']} | "
+                       f"{c['prefix_tokens']}/{c['ref_tokens']}"
+                       f" ({100 * c['prefix_tokens'] / c['ref_tokens']:.1f}%) | "
+                       f"{100 * c['pos_match'] / c['pos_total']:.1f}% | {c['lp_greedy_max']:.4f} | "
+                       f"{c['lp_forced_max']:.4f} | {c['lp_forced_median']:.5f} |")
+
+    header = out[-2:]
+    rows(ref, [r for r in runs if r is not ref])
+    triton = [r for r in runs if r["config"] == "triton"]
+    if triton:
+        t = triton[0]
+        out.append(f"\n## Outputs vs vLLM's own W8A8 path ({name(t)})\n")
+        out.append(f"One run with Marlin disabled (VLLM_DISABLED_KERNELS); vLLM selected "
+                   f"{', '.join(t.get('selected_from_log', [])) or '?'}. It quantizes activations "
+                   "like the plugin, so it separates the effect of W8A8 from that of the kernel.\n")
+        out += header
+        rows(t, by["plugin"])
+        out.append("\nIts own speed (one run): prefill "
+                   + ", ".join(f"L={p['prompt_len']}: {p['tokens_per_s']:.0f} tok/s" for p in t["prefill"])
+                   + "; TPOT " + ", ".join(f"B={p['batch']}: {p['tpot_ms']:.2f} ms" for p in t["decode"])
+                   + " (vLLM's shipped default Triton config; none is tuned for this GPU).")
     path = os.path.join(REPO, "results", "e2e", "summary.md")
     with open(path, "w") as f:
         f.write("\n".join(out) + "\n")

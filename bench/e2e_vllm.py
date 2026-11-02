@@ -12,9 +12,12 @@ One run = one fresh process holding the GPU lock, with one configuration:
     greedy output, so every run scores the same token sequences.
 Each figure is the median of 3 repetitions inside the run. The driver runs
 --runs rounds of (stock, plugin), alternating which goes first, and writes
-results/e2e/qwen3_8b_fp8.json; bench/report_e2e.py summarizes it.
+results/e2e/qwen3_8b_fp8.json; --extra triton appends one run of vLLM's own
+W8A8 path (Marlin disabled) as a reference for the output check.
+bench/report_e2e.py summarizes it.
 
     .venv/bin/python bench/e2e_vllm.py --runs 5      # takes the lock per run itself
+    .venv/bin/python bench/e2e_vllm.py --extra triton
 """
 
 import argparse
@@ -192,45 +195,49 @@ def run_one(config, out, reference):
     os._exit(0)
 
 
-def drive(runs):
-    os.makedirs(RAW_DIR, exist_ok=True)
-    os.makedirs(OUT_DIR, exist_ok=True)
-    build = RAW_DIR
+CONFIG_ENV = {
+    "stock": {"VLLM_PLUGINS": OTHER_PLUGINS},
+    "plugin": {"VLLM_PLUGINS": OTHER_PLUGINS + ",blockfp8"},
+    # vLLM's own W8A8 path: its Triton block-FP8 kernel, the next candidate
+    # once Marlin and Humming are disabled (the log records what vLLM chose).
+    "triton": {"VLLM_PLUGINS": OTHER_PLUGINS,
+               "VLLM_DISABLED_KERNELS": "MarlinFP8ScaledMMLinearKernel,HummingFP8ScaledMMLinearKernel"},
+}
+
+
+def run_config(tag, config, reference):
+    """One measurement process under the GPU lock; returns its result file."""
     base_env = dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
                     TOKENIZERS_PARALLELISM="false",
-                    VLLM_CACHE_ROOT=os.path.join(build, "vllm-cache"),
-                    TRITON_CACHE_DIR=os.path.join(build, "triton-cache"),
-                    TORCHINDUCTOR_CACHE_DIR=os.path.join(build, "inductor-cache"))
-    plugins = {"stock": OTHER_PLUGINS, "plugin": OTHER_PLUGINS + ",blockfp8"}
-    reference = os.path.join(RAW_DIR, "run1-stock.json")
-    files = []
-    for r in range(1, runs + 1):
-        order = ["stock", "plugin"] if r % 2 else ["plugin", "stock"]
-        if r == 1:
-            order = ["stock", "plugin"]  # the first stock run produces the reference outputs
-        for config in order:
-            out = os.path.join(RAW_DIR, f"run{r}-{config}.json")
-            log = os.path.join(build, f"run{r}-{config}.log")
-            cmd = ["flock", gpu_state.LOCK, sys.executable, os.path.abspath(__file__),
-                   "--one", config, "--out", out]
-            if not (r == 1 and config == "stock"):
-                cmd += ["--reference", reference]
-            t0 = time.time()
-            with open(log, "w") as f:
-                p = subprocess.run(cmd, env=dict(base_env, VLLM_PLUGINS=plugins[config]),
-                                   stdout=f, stderr=subprocess.STDOUT)
-            if p.returncode != 0 or not os.path.exists(out):
-                sys.exit(f"run {r} {config} failed (exit {p.returncode}); see {log}")
-            with open(log, errors="replace") as f:
-                selected = sorted({line.split("Selected ", 1)[1].split()[0] for line in f
-                                   if "Selected " in line and "for Fp8LinearMethod" in line})
-            with open(out) as f:
-                d = json.load(f)
-            d["selected_from_log"] = selected
-            with open(out, "w") as f:
-                json.dump(d, f)
-            files.append(out)
-            print(f"run {r} {config}: {time.time() - t0:.0f} s, selected {selected}", flush=True)
+                    VLLM_CACHE_ROOT=os.path.join(RAW_DIR, "vllm-cache"),
+                    TRITON_CACHE_DIR=os.path.join(RAW_DIR, "triton-cache"),
+                    TORCHINDUCTOR_CACHE_DIR=os.path.join(RAW_DIR, "inductor-cache"))
+    out = os.path.join(RAW_DIR, f"{tag}-{config}.json")
+    log = os.path.join(RAW_DIR, f"{tag}-{config}.log")
+    cmd = ["flock", gpu_state.LOCK, sys.executable, os.path.abspath(__file__),
+           "--one", config, "--out", out]
+    if reference:
+        cmd += ["--reference", reference]
+    t0 = time.time()
+    with open(log, "w") as f:
+        p = subprocess.run(cmd, env=dict(base_env, **CONFIG_ENV[config]), stdout=f,
+                           stderr=subprocess.STDOUT)
+    if p.returncode != 0 or not os.path.exists(out):
+        sys.exit(f"{tag} {config} failed (exit {p.returncode}); see {log}")
+    with open(log, errors="replace") as f:
+        selected = sorted({line.split("Selected ", 1)[1].split()[0] for line in f
+                           if "Selected " in line and "for Fp8LinearMethod" in line})
+    with open(out) as f:
+        d = json.load(f)
+    d["selected_from_log"] = selected
+    d["tag"] = tag
+    with open(out, "w") as f:
+        json.dump(d, f)
+    print(f"{tag} {config}: {time.time() - t0:.0f} s, selected {selected}", flush=True)
+    return out
+
+
+def write_combined(files):
     runs_data = []
     for path in files:
         with open(path) as f:
@@ -241,15 +248,41 @@ def drive(runs):
     print("wrote results/e2e/qwen3_8b_fp8.json")
 
 
+def drive(runs):
+    os.makedirs(RAW_DIR, exist_ok=True)
+    os.makedirs(OUT_DIR, exist_ok=True)
+    reference = os.path.join(RAW_DIR, "run1-stock.json")
+    files = []
+    for r in range(1, runs + 1):
+        # The first stock run produces the reference outputs; then alternate.
+        order = ["stock", "plugin"] if r % 2 else ["plugin", "stock"]
+        for config in order:
+            ref = None if (r == 1 and config == "stock") else reference
+            files.append(run_config(f"run{r}", config, ref))
+    write_combined(files)
+
+
+def extra(config):
+    """One more run of another configuration, appended to the combined results."""
+    with open(os.path.join(OUT_DIR, "qwen3_8b_fp8.json")) as f:
+        files = [os.path.join(gpu_state.REPO, p) for p in json.load(f)["files"]]
+    files.append(run_config("extra", config, os.path.join(RAW_DIR, "run1-stock.json")))
+    write_combined(files)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=5)
-    ap.add_argument("--one", choices=["stock", "plugin"], help="one measurement process (internal)")
+    ap.add_argument("--extra", choices=list(CONFIG_ENV),
+                    help="append one run of this configuration to the existing results")
+    ap.add_argument("--one", choices=list(CONFIG_ENV), help="one measurement process (internal)")
     ap.add_argument("--out")
     ap.add_argument("--reference")
     args = ap.parse_args()
     if args.one:
         run_one(args.one, args.out, args.reference)
+    elif args.extra:
+        extra(args.extra)
     else:
         drive(args.runs)
 
