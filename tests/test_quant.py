@@ -10,12 +10,16 @@ def _rand(m, k, dtype=torch.float32, seed=0):
     return (torch.randn(m, k, generator=g) * 3).to(dtype)
 
 
+def _over_fp8_max(t):
+    return t / torch.full_like(t, FP8_MAX)  # a true division, not t * (1 / 448)
+
+
 def test_scales_are_group_amax_over_fp8_max():
     x = _rand(5, 384)
     _, s = quantize_activations(x)
-    expect = torch.stack(
+    expect = _over_fp8_max(torch.stack(
         [x[:, i * 128 : (i + 1) * 128].abs().amax(dim=1) for i in range(3)], dim=1
-    ) / FP8_MAX
+    ))
     assert s.shape == (5, 3)
     torch.testing.assert_close(s, expect, rtol=0, atol=0)
 
@@ -51,7 +55,17 @@ def test_k_tail_group_is_narrower():
     x = _rand(4, 200, seed=4)
     q, s = quantize_activations(x)
     assert q.shape == (4, 200) and s.shape == (4, 2)
-    torch.testing.assert_close(s[:, 1], x[:, 128:].abs().amax(dim=1) / FP8_MAX, rtol=0, atol=0)
+    torch.testing.assert_close(s[:, 1], _over_fp8_max(x[:, 128:].abs().amax(dim=1)), rtol=0, atol=0)
+
+
+def test_scale_is_a_true_division():
+    # amax = 5.03125: amax * (1 / 448) is one ulp away from amax / 448.
+    x = torch.zeros(1, 128)
+    x[0, 0] = 5.03125
+    _, s = quantize_activations(x)
+    amax = torch.tensor([5.03125])
+    assert torch.equal(s.flatten(), _over_fp8_max(amax))
+    assert not torch.equal(_over_fp8_max(amax), amax * (1.0 / FP8_MAX))
 
 
 def test_scale_layouts():

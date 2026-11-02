@@ -2,10 +2,14 @@
 
 Activations: one scale per row per 128-wide K group, computed on the fly
 (dynamic quantization), with the same arithmetic as vLLM's
-per_token_group_quant_fp8:
+per_token_group_quant_fp8 (bitwise; tests/test_gemm_gpu.py checks it):
 
-    scale = max(amax(|x_group|), eps) / 448
+    scale = max(amax(|x_group|), eps) / 448      (IEEE division)
     x_q   = clamp(x / scale, -448, 448) rounded to e4m3 (round to nearest even)
+
+PyTorch turns division by a Python scalar into multiplication by its
+reciprocal, which differs from amax / 448 in the last bit for about 4% of
+groups, so the divisions here are tensor by tensor.
 
 Weights: one scale per 128x128 block, the layout of DeepSeek-V3 / Qwen3-FP8
 checkpoints. Checkpoints already ship quantized weights; quantize_weights is
@@ -16,6 +20,12 @@ import torch
 import torch.nn.functional as F
 
 from .layout import BLOCK_N, FP8_DTYPE, FP8_MAX, GROUP_K, cdiv
+
+
+def _scale_from_amax(amax: torch.Tensor, eps: float) -> torch.Tensor:
+    """max(amax, eps) / 448 with a true division (see the module docstring)."""
+    amax = amax.clamp_min(eps)
+    return amax / torch.full_like(amax, FP8_MAX)
 
 
 def _group_amax(x: torch.Tensor, rows: int, cols: int) -> torch.Tensor:
@@ -46,7 +56,7 @@ def quantize_activations(
         raise ValueError(f"only group_size={GROUP_K} is supported, got {group_size}")
     m, k = x.shape
     xf = x.float()
-    scales = _group_amax(xf, 1, group_size).clamp_min(eps) / FP8_MAX  # [M, KB]
+    scales = _scale_from_amax(_group_amax(xf, 1, group_size), eps)  # [M, KB]
     s_full = scales.repeat_interleave(group_size, dim=1)[:, :k]
     x_q = (xf / s_full).clamp(-FP8_MAX, FP8_MAX).to(FP8_DTYPE)
     if column_major_scales:
@@ -63,7 +73,7 @@ def quantize_weights(w: torch.Tensor, eps: float = 1e-10) -> tuple[torch.Tensor,
         raise ValueError(f"w must be 2-D [N, K], got shape {tuple(w.shape)}")
     n, k = w.shape
     wf = w.float()
-    scales = _group_amax(wf, BLOCK_N, GROUP_K).clamp_min(eps) / FP8_MAX
+    scales = _scale_from_amax(_group_amax(wf, BLOCK_N, GROUP_K), eps)
     s_full = scales.repeat_interleave(BLOCK_N, 0)[:n].repeat_interleave(GROUP_K, 1)[:, :k]
     w_q = (wf / s_full).clamp(-FP8_MAX, FP8_MAX).to(FP8_DTYPE)
     return w_q, scales.contiguous()
