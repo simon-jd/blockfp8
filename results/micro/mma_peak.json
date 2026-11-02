@@ -1,0 +1,174 @@
+{
+ "time_utc": "2026-11-01T22:12:54Z",
+ "git": {
+  "commit": "ba22c421fb3d2bc3613fff8b966de3997aa9425e",
+  "dirty": false,
+  "cutlass_commit": "2c85f497547eb441f0fe80bfb0fb2e6f9add1719"
+ },
+ "holds_gpu_lock": true,
+ "benchmark": "mma_peak",
+ "argv": [
+  "10"
+ ],
+ "data": {
+  "device": "NVIDIA GeForce RTX 4090",
+  "sm": "89",
+  "sms": 128,
+  "results": [
+   {
+    "instruction": "mma.m16n8k32.f32.e4m3.e4m3.f32",
+    "blocks": 512,
+    "threads": 256,
+    "iters": 20000,
+    "chains_per_warp": 8,
+    "reps": 10,
+    "tflops": {
+     "median": 367.5,
+     "p25": 366.254,
+     "p75": 368.253,
+     "min": 366.111,
+     "max": 368.33
+    },
+    "flop_per_sm_per_clk": {
+     "median": 1024.03,
+     "p25": 1024.03,
+     "p75": 1024.03,
+     "min": 1024.02,
+     "max": 1024.04
+    },
+    "sm_mhz_from_clock64": {
+     "median": 2803.73,
+     "p25": 2794.22,
+     "p75": 2809.47,
+     "min": 2793.13,
+     "max": 2810.04
+    }
+   },
+   {
+    "instruction": "mma.m16n8k32.f16.e4m3.e4m3.f16",
+    "blocks": 512,
+    "threads": 256,
+    "iters": 20000,
+    "chains_per_warp": 8,
+    "reps": 10,
+    "tflops": {
+     "median": 730.244,
+     "p25": 730.203,
+     "p75": 730.877,
+     "min": 728.839,
+     "max": 731.253
+    },
+    "flop_per_sm_per_clk": {
+     "median": 2048.16,
+     "p25": 2048.16,
+     "p75": 2048.16,
+     "min": 2048.16,
+     "max": 2048.16
+    },
+    "sm_mhz_from_clock64": {
+     "median": 2785.45,
+     "p25": 2785.29,
+     "p75": 2787.86,
+     "min": 2780.09,
+     "max": 2789.29
+    }
+   },
+   {
+    "instruction": "mma.m16n8k16.f32.bf16.bf16.f32",
+    "blocks": 512,
+    "threads": 256,
+    "iters": 20000,
+    "chains_per_warp": 8,
+    "reps": 10,
+    "tflops": {
+     "median": 183.012,
+     "p25": 182.229,
+     "p75": 183.167,
+     "min": 182.22,
+     "max": 183.178
+    },
+    "flop_per_sm_per_clk": {
+     "median": 511.876,
+     "p25": 511.876,
+     "p75": 511.876,
+     "min": 511.873,
+     "max": 511.876
+    },
+    "sm_mhz_from_clock64": {
+     "median": 2793.21,
+     "p25": 2781.26,
+     "p75": 2795.58,
+     "min": 2781.12,
+     "max": 2795.77
+    }
+   },
+   {
+    "instruction": "mma.m16n8k16.f16.f16.f16.f16",
+    "blocks": 512,
+    "threads": 256,
+    "iters": 20000,
+    "chains_per_warp": 8,
+    "reps": 10,
+    "tflops": {
+     "median": 364.64,
+     "p25": 364.409,
+     "p75": 364.851,
+     "min": 364.358,
+     "max": 364.951
+    },
+    "flop_per_sm_per_clk": {
+     "median": 1024.01,
+     "p25": 1024.01,
+     "p75": 1024.01,
+     "min": 1024.01,
+     "max": 1024.01
+    },
+    "sm_mhz_from_clock64": {
+     "median": 2781.94,
+     "p25": 2780.18,
+     "p75": 2783.56,
+     "min": 2779.79,
+     "max": 2784.31
+    }
+   }
+  ]
+ },
+ "gpu_before": {
+  "timestamp": "2026/11/01 14:12:54.850",
+  "name": "NVIDIA GeForce RTX 4090",
+  "driver_version": "595.99.02",
+  "pstate": "P2",
+  "clocks.sm": "2820 MHz",
+  "clocks.mem": "10501 MHz",
+  "clocks.max.sm": "3105 MHz",
+  "temperature.gpu": "34",
+  "power.draw": "68.33 W",
+  "power.limit": "450.00 W",
+  "utilization.gpu": "0 %",
+  "memory.used": "662 MiB",
+  "memory.total": "24564 MiB",
+  "clocks_event_reasons.active": "0x0000000000000000",
+  "compute_apps": [
+   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 165 MiB"
+  ]
+ },
+ "gpu_after": {
+  "timestamp": "2026/11/01 14:12:55.581",
+  "name": "NVIDIA GeForce RTX 4090",
+  "driver_version": "595.99.02",
+  "pstate": "P2",
+  "clocks.sm": "2805 MHz",
+  "clocks.mem": "10501 MHz",
+  "clocks.max.sm": "3105 MHz",
+  "temperature.gpu": "39",
+  "power.draw": "165.91 W",
+  "power.limit": "450.00 W",
+  "utilization.gpu": "100 %",
+  "memory.used": "662 MiB",
+  "memory.total": "24564 MiB",
+  "clocks_event_reasons.active": "0x0000000000000000",
+  "compute_apps": [
+   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 165 MiB"
+  ]
+ }
+}

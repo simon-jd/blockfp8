@@ -1,0 +1,637 @@
+{
+ "time_utc": "2026-11-01T22:12:55Z",
+ "git": {
+  "commit": "ba22c421fb3d2bc3613fff8b966de3997aa9425e",
+  "dirty": false,
+  "cutlass_commit": "2c85f497547eb441f0fe80bfb0fb2e6f9add1719"
+ },
+ "holds_gpu_lock": true,
+ "benchmark": "dram_bw",
+ "argv": [
+  "20"
+ ],
+ "data": {
+  "device": "NVIDIA GeForce RTX 4090",
+  "sms": 128,
+  "l2_bytes": 75497472,
+  "blocks": 768,
+  "threads": 256,
+  "reps": 20,
+  "results": [
+   {
+    "kind": "read",
+    "l2": "warm",
+    "working_set_mb": 8,
+    "gb_per_s": {
+     "median": 1856.53,
+     "p25": 1724.63,
+     "p75": 2048,
+     "min": 1365.33,
+     "max": 2114.06
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "cold",
+    "working_set_mb": 8,
+    "gb_per_s": {
+     "median": 742.624,
+     "p25": 682.667,
+     "p75": 744.727,
+     "min": 682.667,
+     "max": 744.727
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "warm",
+    "working_set_mb": 8,
+    "gb_per_s": {
+     "median": 1613.33,
+     "p25": 1424.7,
+     "p75": 1638.4,
+     "min": 1365.33,
+     "max": 1638.4
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "cold",
+    "working_set_mb": 8,
+    "gb_per_s": {
+     "median": 1398.91,
+     "p25": 1365.33,
+     "p75": 1620.69,
+     "min": 1365.33,
+     "max": 1638.4
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "warm",
+    "working_set_mb": 8,
+    "gb_per_s": {
+     "median": 2515.74,
+     "p25": 2399.52,
+     "p75": 2688.87,
+     "min": 2340.57,
+     "max": 2730.67
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "cold",
+    "working_set_mb": 8,
+    "gb_per_s": {
+     "median": 1365.33,
+     "p25": 1365.33,
+     "p75": 1365.33,
+     "min": 1340.89,
+     "max": 1376.08
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "warm",
+    "working_set_mb": 16,
+    "gb_per_s": {
+     "median": 2730.67,
+     "p25": 2730.67,
+     "p75": 2748.58,
+     "min": 2688.66,
+     "max": 3048.19
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "cold",
+    "working_set_mb": 16,
+    "gb_per_s": {
+     "median": 819.2,
+     "p25": 816.33,
+     "p75": 819.2,
+     "min": 793.174,
+     "max": 821.768
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "warm",
+    "working_set_mb": 16,
+    "gb_per_s": {
+     "median": 1924.52,
+     "p25": 1869.14,
+     "p75": 2048,
+     "min": 1820.44,
+     "max": 2048
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "cold",
+    "working_set_mb": 16,
+    "gb_per_s": {
+     "median": 1846.08,
+     "p25": 1820.44,
+     "p75": 1956.3,
+     "min": 1814.15,
+     "max": 2048
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "warm",
+    "working_set_mb": 16,
+    "gb_per_s": {
+     "median": 3276.8,
+     "p25": 3274.25,
+     "p75": 3297.41,
+     "min": 2995.93,
+     "max": 3415.56
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "cold",
+    "working_set_mb": 16,
+    "gb_per_s": {
+     "median": 1638.4,
+     "p25": 1608.95,
+     "p75": 1638.4,
+     "min": 1581.56,
+     "max": 1646.12
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "warm",
+    "working_set_mb": 32,
+    "gb_per_s": {
+     "median": 3640.89,
+     "p25": 3591.01,
+     "p75": 3640.89,
+     "min": 3328.81,
+     "max": 3705.22
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "cold",
+    "working_set_mb": 32,
+    "gb_per_s": {
+     "median": 884.501,
+     "p25": 868.927,
+     "p75": 885.622,
+     "min": 862.316,
+     "max": 885.622
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "warm",
+    "working_set_mb": 32,
+    "gb_per_s": {
+     "median": 2214.52,
+     "p25": 2184.53,
+     "p75": 2295.78,
+     "min": 2184.53,
+     "max": 2340.57
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "cold",
+    "working_set_mb": 32,
+    "gb_per_s": {
+     "median": 2184.53,
+     "p25": 2184.53,
+     "p75": 2255.51,
+     "min": 2184.53,
+     "max": 2340.57
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "warm",
+    "working_set_mb": 32,
+    "gb_per_s": {
+     "median": 3679.21,
+     "p25": 3640.89,
+     "p75": 3766.78,
+     "min": 3640.89,
+     "max": 3855.06
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "cold",
+    "working_set_mb": 32,
+    "gb_per_s": {
+     "median": 1724.63,
+     "p25": 1724.63,
+     "p75": 1733.54,
+     "min": 1724.63,
+     "max": 1771.24
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "warm",
+    "working_set_mb": 64,
+    "gb_per_s": {
+     "median": 4369.07,
+     "p25": 4185.98,
+     "p75": 4369.07,
+     "min": 1129.93,
+     "max": 4378.19
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "cold",
+    "working_set_mb": 64,
+    "gb_per_s": {
+     "median": 911.607,
+     "p25": 910.222,
+     "p75": 915.89,
+     "min": 872.722,
+     "max": 923.042
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "warm",
+    "working_set_mb": 64,
+    "gb_per_s": {
+     "median": 923.042,
+     "p25": 920.813,
+     "p75": 931.033,
+     "min": 911.013,
+     "max": 963.765
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "cold",
+    "working_set_mb": 64,
+    "gb_per_s": {
+     "median": 1882.54,
+     "p25": 1872.46,
+     "p75": 1927.53,
+     "min": 1820.44,
+     "max": 1985.94
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "warm",
+    "working_set_mb": 64,
+    "gb_per_s": {
+     "median": 892.215,
+     "p25": 890.747,
+     "p75": 897.034,
+     "min": 885.622,
+     "max": 903.945
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "cold",
+    "working_set_mb": 64,
+    "gb_per_s": {
+     "median": 1337.47,
+     "p25": 1334.7,
+     "p75": 1339.28,
+     "min": 1323.96,
+     "max": 1351.26
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "warm",
+    "working_set_mb": 128,
+    "gb_per_s": {
+     "median": 936.647,
+     "p25": 936.229,
+     "p75": 938.743,
+     "min": 929.589,
+     "max": 942.964
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "cold",
+    "working_set_mb": 128,
+    "gb_per_s": {
+     "median": 936.229,
+     "p25": 936.229,
+     "p75": 936.229,
+     "min": 931.86,
+     "max": 938.743
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "warm",
+    "working_set_mb": 128,
+    "gb_per_s": {
+     "median": 919.603,
+     "p25": 916.587,
+     "p75": 923.042,
+     "min": 910.222,
+     "max": 929.589
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "cold",
+    "working_set_mb": 128,
+    "gb_per_s": {
+     "median": 1248.12,
+     "p25": 1244.05,
+     "p75": 1248.3,
+     "min": 1229.28,
+     "max": 1260.31
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "warm",
+    "working_set_mb": 128,
+    "gb_per_s": {
+     "median": 896.507,
+     "p25": 892.192,
+     "p75": 897.97,
+     "min": 888.812,
+     "max": 903.945
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "cold",
+    "working_set_mb": 128,
+    "gb_per_s": {
+     "median": 1067.66,
+     "p25": 1065.63,
+     "p75": 1069.98,
+     "min": 1061.31,
+     "max": 1074.36
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "warm",
+    "working_set_mb": 256,
+    "gb_per_s": {
+     "median": 947.009,
+     "p25": 946.342,
+     "p75": 947.651,
+     "min": 942.964,
+     "max": 949.797
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "cold",
+    "working_set_mb": 256,
+    "gb_per_s": {
+     "median": 946.368,
+     "p25": 946.262,
+     "p75": 946.422,
+     "min": 936.229,
+     "max": 949.797
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "warm",
+    "working_set_mb": 256,
+    "gb_per_s": {
+     "median": 923.042,
+     "p25": 920.384,
+     "p75": 926.304,
+     "min": 916.587,
+     "max": 928.56
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "cold",
+    "working_set_mb": 256,
+    "gb_per_s": {
+     "median": 1057.03,
+     "p25": 1053.98,
+     "p75": 1057.9,
+     "min": 1052.79,
+     "max": 1066.17
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "warm",
+    "working_set_mb": 256,
+    "gb_per_s": {
+     "median": 894.952,
+     "p25": 893.415,
+     "p75": 896.219,
+     "min": 890.274,
+     "max": 899.293
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "cold",
+    "working_set_mb": 256,
+    "gb_per_s": {
+     "median": 975.902,
+     "p25": 974.513,
+     "p75": 976.328,
+     "min": 970.904,
+     "max": 976.328
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "warm",
+    "working_set_mb": 512,
+    "gb_per_s": {
+     "median": 953.251,
+     "p25": 953.251,
+     "p75": 953.441,
+     "min": 951.521,
+     "max": 954.987
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "cold",
+    "working_set_mb": 512,
+    "gb_per_s": {
+     "median": 953.251,
+     "p25": 952.967,
+     "p75": 953.292,
+     "min": 951.359,
+     "max": 954.335
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "warm",
+    "working_set_mb": 512,
+    "gb_per_s": {
+     "median": 911.805,
+     "p25": 909.828,
+     "p75": 913.17,
+     "min": 905.066,
+     "max": 916.587
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "cold",
+    "working_set_mb": 512,
+    "gb_per_s": {
+     "median": 976.243,
+     "p25": 972.705,
+     "p75": 976.84,
+     "min": 965.54,
+     "max": 981.813
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "warm",
+    "working_set_mb": 512,
+    "gb_per_s": {
+     "median": 894.868,
+     "p25": 893.927,
+     "p75": 895.495,
+     "min": 893.118,
+     "max": 896.219
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "cold",
+    "working_set_mb": 512,
+    "gb_per_s": {
+     "median": 932.068,
+     "p25": 931.15,
+     "p75": 932.897,
+     "min": 929.589,
+     "max": 934.404
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "warm",
+    "working_set_mb": 1024,
+    "gb_per_s": {
+     "median": 956.525,
+     "p25": 955.919,
+     "p75": 956.73,
+     "min": 954.987,
+     "max": 956.73
+    }
+   },
+   {
+    "kind": "read",
+    "l2": "cold",
+    "working_set_mb": 1024,
+    "gb_per_s": {
+     "median": 956.607,
+     "p25": 955.96,
+     "p75": 956.73,
+     "min": 954.634,
+     "max": 956.73
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "warm",
+    "working_set_mb": 1024,
+    "gb_per_s": {
+     "median": 891.682,
+     "p25": 889.307,
+     "p75": 894.713,
+     "min": 884.991,
+     "max": 897.153
+    }
+   },
+   {
+    "kind": "write",
+    "l2": "cold",
+    "working_set_mb": 1024,
+    "gb_per_s": {
+     "median": 925.486,
+     "p25": 923.652,
+     "p75": 927.534,
+     "min": 920.611,
+     "max": 932.068
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "warm",
+    "working_set_mb": 1024,
+    "gb_per_s": {
+     "median": 893.385,
+     "p25": 892.895,
+     "p75": 893.718,
+     "min": 891.729,
+     "max": 894.01
+    }
+   },
+   {
+    "kind": "copy",
+    "l2": "cold",
+    "working_set_mb": 1024,
+    "gb_per_s": {
+     "median": 910.815,
+     "p25": 910.617,
+     "p75": 911.424,
+     "min": 909.039,
+     "max": 912.673
+    }
+   }
+  ]
+ },
+ "gpu_before": {
+  "timestamp": "2026/11/01 14:12:55.692",
+  "name": "NVIDIA GeForce RTX 4090",
+  "driver_version": "595.99.02",
+  "pstate": "P2",
+  "clocks.sm": "2805 MHz",
+  "clocks.mem": "10501 MHz",
+  "clocks.max.sm": "3105 MHz",
+  "temperature.gpu": "37",
+  "power.draw": "165.92 W",
+  "power.limit": "450.00 W",
+  "utilization.gpu": "100 %",
+  "memory.used": "662 MiB",
+  "memory.total": "24564 MiB",
+  "clocks_event_reasons.active": "0x0000000000000000",
+  "compute_apps": [
+   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 165 MiB"
+  ]
+ },
+ "gpu_after": {
+  "timestamp": "2026/11/01 14:12:56.485",
+  "name": "NVIDIA GeForce RTX 4090",
+  "driver_version": "595.99.02",
+  "pstate": "P2",
+  "clocks.sm": "2805 MHz",
+  "clocks.mem": "10501 MHz",
+  "clocks.max.sm": "3105 MHz",
+  "temperature.gpu": "37",
+  "power.draw": "154.78 W",
+  "power.limit": "450.00 W",
+  "utilization.gpu": "100 %",
+  "memory.used": "662 MiB",
+  "memory.total": "24564 MiB",
+  "clocks_event_reasons.active": "0x0000000000000000",
+  "compute_apps": [
+   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 165 MiB"
+  ]
+ }
+}
