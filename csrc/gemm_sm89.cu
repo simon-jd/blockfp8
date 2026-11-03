@@ -203,7 +203,7 @@ Plan choose_fused_plan(int M, int N, int K, int num_sms) {
 
 bool prefers_fused(int M, int N, int K) {
   const FusedEntry* t = lookup(kFusedTable, entries(kFusedTable), kNumFusedConfigs, M, N, K);
-  if (!t) return M <= 16;
+  if (!t) return false;
   return M <= t->m && t->wins;
 }
 

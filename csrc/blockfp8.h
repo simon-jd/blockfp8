@@ -45,7 +45,8 @@ Plan choose_plan(int M, int N, int K, int num_sms);
 Plan choose_fused_plan(int M, int N, int K, int num_sms);
 
 // True where the autotuning sweep found the fused kernel faster than the
-// separate quantization kernel followed by the GEMM (untuned shapes: M <= 16).
+// separate quantization kernel followed by the GEMM (untuned shapes: false;
+// it lost on every tuned shape, results/gemm/autotune_fused.json).
 bool prefers_fused(int M, int N, int K);
 
 // Number of CTA tiles and K tiles for a plan's configuration.
