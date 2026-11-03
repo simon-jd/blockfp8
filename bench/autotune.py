@@ -1,18 +1,20 @@
 """Sweep kernel configuration x split count per shape and freeze the winners.
 
-For every Qwen3-8B layer shape and M in the benchmark set, every compiled
-configuration is timed with every split count that leaves each split at least
-one K tile. Timing: CUDA events around single calls, each preceded by a read
-of a 256 MB buffer (cold L2, the decode-realistic case), median of 15 calls.
-Writes results/gemm/autotune.json (all timings) and csrc/plan_table.inc, the
-table choose_plan() consults (rebuild the extension afterwards).
+For every Qwen3-8B layer shape and every M of the tuning grid (TUNE_M, the
+powers of two 1-8192, so that a batch size between two entries is less than
+2x below the entry it uses), every compiled configuration is timed with every
+split count that leaves each split at least one K tile. Timing: the benchmark's own harness
+(bench_gemm.time_calls: CUPTI kernel spans, a 256 MB read evicting the
+weights and the call's activations read back into L2, interleaved runs,
+median of the per-run medians), so a plan is chosen by the measure it is
+reported with. Writes results/gemm/autotune.json (all timings) and
+csrc/plan_table.inc, the table choose_plan() consults (rebuild the extension
+afterwards).
 
 With --fused, sweeps the fused-quantization configurations instead (bf16
 activations, M <= 256) and times the alternative they replace: the separate
 quantization kernel (blockfp8.quantize_cuda) followed by the GEMM with the
-frozen plan; vLLM's per_token_group_quant_fp8 + GEMM is recorded too. Here
-the bf16 activations are re-read into L2 after each flush, as a layer's
-input would be. Writes
+frozen plan; vLLM's per_token_group_quant_fp8 + GEMM is recorded too. Writes
 results/gemm/autotune_fused.json and csrc/fused_plan_table.inc, which
 choose_fused_plan() and prefers_fused() consult.
 
@@ -33,52 +35,60 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import gpu_state  # noqa: E402
 
 import blockfp8  # noqa: E402
-from bench_gemm import LAYERS, M_VALUES  # noqa: E402
+from bench_gemm import LAYERS, time_calls  # noqa: E402
 
+TUNE_M = [1 << i for i in range(14)]  # 1, 2, 4, ..., 8192 (bench/tune_triton.py too)
 SPLITS = (1, 2, 3, 4, 6, 8, 12, 16, 24, 32)
-FUSED_M = [m for m in M_VALUES if m <= 256]
+FUSED_M = [m for m in TUNE_M if m <= 256]
+RUNS = 5
 
 
-def time_cold_us(fn, flush, sink, calls=15, acts=()):
-    """acts: activation tensors re-read into L2 after the flush (weights stay cold)."""
-    s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    out = []
-    for _ in range(calls):
-        torch.sum(flush, dim=0, dtype=torch.int64, out=sink)
-        for t in acts:
-            t.sum(dtype=torch.float32)
-        s.record()
-        fn()
-        e.record()
-        e.synchronize()
-        out.append(s.elapsed_time(e) * 1e3)
-    return statistics.median(out)
+def calls_per_run(m):
+    return 10 if m <= 256 else 5 if m <= 1024 else 3
 
 
-def sweep(names, m, k_tiles, make_fn, flush, sink, acts=()):
-    """Times every configuration x split count; returns the rows, fastest first."""
-    rows = []
+def candidates(names, m, k_tiles):
+    """(config, name, splits) worth timing at batch size m."""
     for cfg, cname in enumerate(names):
         bm = int(cname.split("n")[0][1:])
         if bm > 2 * max(m, 16) and bm > 16:
             continue  # a tile mostly of padding rows never wins
+        if m >= 1024 and bm < 64:
+            continue  # 16- and 32-row tiles re-read the weights M / BM times
         for sp in SPLITS:
-            if sp > k_tiles or (m >= 1024 and sp > 4):
+            if sp > k_tiles or (m >= 512 and sp > 4):
                 continue
-            fn = make_fn(cfg, sp)
-            fn()
-            rows.append({"config": cfg, "name": cname, "splits": sp,
-                         "us": time_cold_us(fn, flush, sink, acts=acts)})
-    rows.sort(key=lambda r: r["us"])
-    return rows
+            if -(-k_tiles // -(-k_tiles // sp)) != sp:
+                continue  # the launcher would run fewer splits (no empty ones): a duplicate
+            yield cfg, cname, sp
 
 
-def main_fused(flush, sink):
+def sweep(names, m, k_tiles, make_fn, acts, extra=None):
+    """Times every candidate plan (and the callables in extra) in one interleaved
+    measurement; returns (plan rows fastest first, {extra name: us})."""
+    fns, plans = {}, {}
+    for cfg, cname, sp in candidates(names, m, k_tiles):
+        label = f"{cname}/{sp}"
+        fns[label] = make_fn(cfg, sp)
+        plans[label] = {"config": cfg, "name": cname, "splits": sp}
+    fns.update(extra or {})
+    for fn in fns.values():
+        fn()
+    torch.cuda.synchronize()
+    timed = time_calls(fns, {k: acts for k in fns}, RUNS, calls_per_run(m), modes=("cold",))
+    us = {k: statistics.median(timed[(k, "cold")]) for k in fns}
+    rows = sorted(({**plans[k], "us": us[k], "runs_us": timed[(k, "cold")]} for k in plans),
+                  key=lambda r: r["us"])
+    return rows, {k: us[k] for k in (extra or {})}
+
+
+def main_fused():
     import vllm_baselines
 
     names = blockfp8.fused_configs()
     out = {"header": gpu_state.header(benchmark="autotune_fused", configs=names,
-                                      unfused_configs=blockfp8.configs()),
+                                      unfused_configs=blockfp8.configs(), runs=RUNS,
+                                      timing="bench_gemm.time_calls, cold L2"),
            "gpu_before": gpu_state.nvidia_smi(), "shapes": []}
     t0 = time.time()
     for name, (n, k) in LAYERS.items():
@@ -86,27 +96,23 @@ def main_fused(flush, sink):
         b, sb = blockfp8.quantize_weights(torch.randn(n, k, generator=g, device="cuda") * 0.02)
         for m in FUSED_M:
             x = torch.randn(m, k, generator=g, device="cuda").to(torch.bfloat16)
-
-            def separate():
-                return blockfp8.gemm(*blockfp8.quantize_cuda(x), b, sb)
-
-            def separate_vllm():
-                return blockfp8.gemm(*vllm_baselines.vllm_group_quant(x, column_major=True), b, sb)
-
-            separate()
-            separate_vllm()
-            sep_us = time_cold_us(separate, flush, sink, acts=[x])
-            sep_vllm_us = time_cold_us(separate_vllm, flush, sink, acts=[x])
-            rows = sweep(names, m, -(-k // 128),
-                         lambda cfg, sp: lambda: blockfp8.gemm_bf16(x, b, sb, config=cfg, split_k=sp),
-                         flush, sink, acts=[x])
+            extra = {
+                "separate": lambda: blockfp8.gemm(*blockfp8.quantize_cuda(x), b, sb),
+                "separate_vllm": lambda: blockfp8.gemm(
+                    *vllm_baselines.vllm_group_quant(x, column_major=True), b, sb),
+            }
+            rows, ex = sweep(names, m, -(-k // 128),
+                             lambda cfg, sp: lambda: blockfp8.gemm_bf16(x, b, sb, config=cfg,
+                                                                        split_k=sp),
+                             [x], extra)
             best = rows[0]
-            wins = best["us"] < sep_us
+            wins = best["us"] < ex["separate"]
             out["shapes"].append({"layer": name, "N": n, "K": k, "M": m, "best": best,
-                                  "separate_us": sep_us, "separate_vllm_quant_us": sep_vllm_us,
+                                  "separate_us": ex["separate"],
+                                  "separate_vllm_quant_us": ex["separate_vllm"],
                                   "wins": wins, "all": rows})
             print(f"{name} M={m}: fused {best['name']} splits={best['splits']} {best['us']:.1f} us,"
-                  f" quant + gemm {sep_us:.1f} us (vLLM quant {sep_vllm_us:.1f})"
+                  f" quant + gemm {ex['separate']:.1f} us (vLLM quant {ex['separate_vllm']:.1f})"
                   f" -> {'fused' if wins else 'separate'}", flush=True)
     out["elapsed_s"] = time.time() - t0
     out["gpu_after"] = gpu_state.nvidia_smi()
@@ -131,27 +137,29 @@ def main():
     args = ap.parse_args()
     if not gpu_state.holds_gpu_lock():
         sys.exit(f"refusing to measure without holding {gpu_state.LOCK} (run under flock)")
-    flush = torch.empty(256 << 20, dtype=torch.uint8, device="cuda")
-    sink = torch.empty((), dtype=torch.int64, device="cuda")
     if args.fused:
-        return main_fused(flush, sink)
+        return main_fused()
     names = blockfp8.configs()
-    out = {"header": gpu_state.header(benchmark="autotune", configs=names),
+    out = {"header": gpu_state.header(benchmark="autotune", configs=names, runs=RUNS,
+                                      timing="bench_gemm.time_calls, cold L2"),
            "gpu_before": gpu_state.nvidia_smi(), "shapes": []}
     t0 = time.time()
     for name, (n, k) in LAYERS.items():
         g = torch.Generator(device="cuda").manual_seed(0)
         b, sb = blockfp8.quantize_weights(torch.randn(n, k, generator=g, device="cuda") * 0.02)
         k_tiles = -(-k // 128)
-        for m in M_VALUES:
+        for m in TUNE_M:
             a, sa = blockfp8.quantize_activations(torch.randn(m, k, generator=g, device="cuda"))
-            rows = sweep(names, m, k_tiles,
-                         lambda cfg, sp: lambda: blockfp8.gemm(a, sa, b, sb, config=cfg, split_k=sp),
-                         flush, sink)
+            rows, _ = sweep(names, m, k_tiles,
+                            lambda cfg, sp: lambda: blockfp8.gemm(a, sa, b, sb, config=cfg,
+                                                                  split_k=sp),
+                            [a, sa])
             best = rows[0]
             out["shapes"].append({"layer": name, "N": n, "K": k, "M": m, "best": best, "all": rows})
             print(f"{name} M={m}: {best['name']} splits={best['splits']} {best['us']:.1f} us",
                   flush=True)
+        del b, sb
+        torch.cuda.empty_cache()
     out["elapsed_s"] = time.time() - t0
     out["gpu_after"] = gpu_state.nvidia_smi()
     res = os.path.join(gpu_state.REPO, "results", "gemm", "autotune.json")
