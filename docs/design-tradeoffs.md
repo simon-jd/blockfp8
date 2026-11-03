@@ -80,14 +80,16 @@ Numbers come from `results/` (see the README for how they were measured).
 - **Why 64 columns:** a weight block is 128 columns, so 64-column tiles still
   read one scale per K tile, and they double the CTAs per weight block row.
   With only 128-column tiles the middle range lost up to 21% to tuned Triton
-  (which picks 64-column tiles there); with them it is 0.94-1.04x.
+  (which picks 64-column tiles there); with them it is 0.95-1.04x.
 - **Cost of the 16-row tile at M = 1:** 15 of 16 MMA rows are padding. The
-  MMA time is still hidden behind the weight stream (809-934 GB/s against a
+  MMA time is still hidden behind the weight stream (805-935 GB/s against a
   957 GB/s read peak), so swapping the operands to put the weights in the
   MMA's 16-row slot was not needed.
-- **Still missing:** at M = 64 tuned Triton remains 1-6% faster and cuBLASLt
+- **Still missing:** at M = 64 tuned Triton remains 2-4% faster and cuBLASLt
   (per-tensor scales) up to 17% faster in the middle range; stream-K or a
-  persistent schedule was not tried.
+  persistent schedule was not tried. The plan table has entries only for
+  M = 1, 4, 16, 64, 256, 1024, 4096, 8192, and between them it can be far
+  off (qkv at M = 512 is 0.93x of default Triton).
 
 ## 6. Deterministic split-K with a "last CTA reduces" counter
 

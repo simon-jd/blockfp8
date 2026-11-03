@@ -121,12 +121,14 @@ operands (error relative to the exact result, median over 16 384 outputs):
 | promote every MMA (K = 32) | 5.6e-5 | 6.3e-6 |
 | FP16 accumulator, promote every 4 MMAs | 4.6e-4 | 4.5e-5 |
 
-Without promotion the error approaches the bf16 output's own rounding
-(unit roundoff 2^-8 = 3.9e-3, typical error ~1e-3). Promoting once per
-128-wide block, which the block scales require anyway, brings it to 1.4e-4,
-about 28 times below bf16 rounding; promoting every MMA would gain another
-2.4x at four times the FMAs, which a bf16 output cannot show. So the scale
-block size is also a sufficient promotion interval.
+Rounding the same exact results to bf16 errs by a median of 1.37e-3 (unit
+roundoff 2^-8 = 3.9e-3), so without promotion the accumulation error is
+already 71% of the bf16 output's own rounding error. Promoting once per
+128-wide block, which the block scales require anyway, brings it to 1.37e-4,
+10 times below; rounded to bf16, the promoted result errs by a median of
+1.41e-3, 3% more than rounding alone. Promoting every MMA would gain another
+2.4x at four times the FMAs, which a bf16 output cannot show (1.38e-3). So
+the scale block size is also a sufficient promotion interval.
 
 The tests use this model for a worst-case bound (`blockfp8.error_bound`):
 one MMA errs by at most 33 * 2^-13 times its largest addend, which is at
@@ -175,7 +177,8 @@ five small-M configurations, each timed against `quantize_cuda` + `gemm`
 with the frozen plan, both with the bf16 activations L2-resident.
 `prefers_fused` is true only where the fused kernel was faster: qkv at
 M = 1-16, o at M = 4-16 and down at M = 16, by 0.1-1.1 us (CUDA-event
-timings, about 1 us resolution in practice). It tied on o at
+timings, about 1 us resolution in practice, so these choices are close to
+coin flips). It tied on o at
 M = 1, lost by 1-2 us on gate_up at M = 1-16 and down at M = 1-4, and lost by
 4-365 us at M >= 64, where every CTA of a tile row re-quantizes the same rows
 (3.1x slower for gate_up at M = 256).
@@ -189,30 +192,46 @@ L2-resident reads up to 4.4 TB/s. "Cold L2" means the weights are evicted
 (a 256 MB read) and the call's activations are then read back into L2, as
 they are in a model where the previous layer has just written them.
 
-- **Prefill (M >= 1024):** 306-320 TFLOPS, 83-87% of the MMA peak. With the
-  activation quantization included (`linear`), 1.67-2.02x faster than vLLM's
+- **Prefill (M >= 1024):** 307-321 TFLOPS, 84-87% of the MMA peak. With the
+  activation quantization included (`linear`), 1.67-2.03x faster than vLLM's
   actual default on this GPU (FP8 Marlin, whose bf16 MMAs peak at half the
-  FP8 rate). GEMM only: 1.09-1.21x faster than vLLM's Triton kernel as
+  FP8 rate). GEMM only: 1.08-1.21x faster than vLLM's Triton kernel as
   shipped and 1.01-1.09x faster than the same kernel tuned here. cuBLASLt
-  with one scale per tensor is up to 9% faster (0.91-0.94x of our time) on
+  with one scale per tensor is up to 9% faster (0.91-0.93x of our time) on
   every shape but one, because it has no per-block scales to apply; on down
-  at M = 8192 it measured 1.29x slower.
-- **Decode (M <= 16):** a weight stream at 809-934 GB/s (85-98% of the
+  at M = 8192 it measured 1.27x slower.
+- **Decode (M <= 16):** a weight stream at 805-935 GB/s (84-98% of the
   measured DRAM read bandwidth). GEMM only, this is 1.02-1.14x faster than
   Marlin, which reads the same FP8 bytes. The activation quantization adds
-  0.7-2.5 us on top (fused where that is faster, else blockfp8's own
-  quantization kernel), against 1.7-3.2 us with vLLM's kernel, so `linear`
-  is 0.97-1.06x of Marlin: ahead on qkv, o and gate_up, even on down at
-  M = 1-4, and 3% behind on down at M = 16.
-- **Middle (M = 64-256):** 0.94-1.04x of tuned Triton (before the 64-column
-  tiles: 0.79-1.01x). Still behind by 1-6% at M = 64 on all four shapes and
-  on qkv at M = 256. cuBLASLt (per tensor) is up to 17% faster (0.83-1.02x).
-  Against Marlin, `linear` is 1.13-2.12x except down at M = 64, where it is
-  5% slower (0.95x): Marlin (63.0 us) and the GEMM alone (63.6 us) are both
+  0.9-2.1 us on top (fused where that is faster, else blockfp8's own
+  quantization kernel), against 1.8-3.0 us with vLLM's kernel, so `linear`
+  is 0.99-1.06x of Marlin: ahead on qkv, o and gate_up, even on down at
+  M = 1-4, and 1% behind on down at M = 16. Tuned Triton is up to 7% faster
+  on o and qkv at M = 1-16.
+- **Middle (M = 64-256):** 0.95-1.04x of tuned Triton (before the 64-column
+  tiles: 0.79-1.01x). Still behind by 2-4% at M = 64 on all four shapes and
+  by 5% on qkv at M = 256. cuBLASLt (per tensor) is up to 17% faster (0.83-1.01x).
+  Against Marlin, `linear` is 1.15-2.11x except down at M = 64, where it
+  ties (1.00x): Marlin (64.4 us) and the GEMM alone (61.4 us) are both
   close to the 52.6 us it takes to read the 50 MB of weights, and `linear`
-  adds 2.4 us of quantization.
+  adds 2.6 us of quantization. In the previous recording (commit b3f50b9)
+  the same cells were 63.0 and 63.6 us, a 5% loss; cells of unchanged
+  kernels moved by up to 4.5% between the two recordings.
+- **Off the tuning grid** (M = 2, 8, 32, 100, 512, 3000; second table in
+  results/gemm/summary.md): the plan table takes the entry with the
+  smallest tabulated M >= M, tuned Triton the nearest tabulated M. At
+  M = 2, 8 and 100 the kernel loses at most 5% to any baseline but cuBLASLt
+  (o at M = 8: 0.95x of tuned Triton; cuBLASLt up to 11% faster). M = 32 (planned as 64) loses 2-7% to
+  Marlin and 7-14% to tuned Triton on qkv, o and down. qkv at M = 512
+  (planned as 1024) takes 110.9 us, twice M = 256's 54.7 us, and loses to
+  every baseline but Marlin (0.93x of default Triton, 0.88x of tuned,
+  0.71x of cuBLASLt). A plan table on a finer M grid would be the fix; it
+  was not built.
 
-The warm-L2 tables are in the same file.
+The tuned Triton configs are the fastest of each shape's five best warm-L2
+candidates (CUDA events), re-timed with the same cold-L2 CUPTI harness as
+these tables (`bench/tune_triton.py`); that changed 11 of 32 picks (the warm
+pick would have been up to 12% slower, qkv at M = 64). The warm-L2 tables are in the same file.
 
 ## Why "+q" looked almost free for o at M = 64 (results/gemm/l2_probe.json)
 
@@ -260,23 +279,39 @@ vLLM's log to confirm which kernel it selected in every run.
 | decode TPOT, batch 16 | 10.84 ms | 10.72 ms | 1.011x |
 | decode TPOT, batch 64 | 14.08 ms | 12.91 ms | 1.090x |
 
-Prefill gains less than the GEMMs alone (1.67-2.02x) because attention,
-norms and sampling do not change; decode at batch 1-16 gains 1-2%, in line
-with the GEMM-level 0.97-1.06x against Marlin (the linear layers are a
-weight stream either way), and batch 64 gains 9%, where `linear` is
-1.13-1.15x faster than Marlin on qkv, o and gate_up (and 0.95x on down).
+Prefill gains less than the GEMMs alone (1.67-2.02x in the GEMM recording
+of that time) because attention, norms and sampling do not change; decode at
+batch 1-16 gains 1-2%, in line with the GEMM-level 0.97-1.06x against
+Marlin then (0.99-1.06x now; the linear layers are a weight stream either
+way), and batch 64 gains 9%, where `linear` was 1.13-1.15x faster than
+Marlin on qkv, o and gate_up (and 0.95x on down).
+
+**Perplexity** (results/e2e/wikitext2_ppl.json, `bench/e2e_vllm.py --ppl`):
+the wikitext-2-raw-v1 test split, its 4,358 lines joined with blank lines,
+is 298,931 tokens; it is cut into 147 non-overlapping windows of 2048 tokens,
+each scored on its own with prompt_logprobs (every token but a window's
+first), in one engine process per configuration. Stock 9.7646, plugin 9.7735
+(+0.09%), vLLM's Triton W8A8 path 9.7739 (+0.10%); a second stock run
+reproduced the first bit for bit. The per-token logprob differences against
+stock are the same for both W8A8 kernels (mean 0.062, p99 0.48, mean signed
+-9e-4 for the plugin and -9.5e-4 for Triton), and between the two kernels
+larger (mean 0.079, p99 0.62): they disagree token by token as much as each
+does with stock, but cost the same perplexity.
 
 **Outputs.** They are not the same, and they are not expected to be: the
 plugin quantizes activations to e4m3 (W8A8, the scheme the checkpoint was
 made for), Marlin keeps them in bf16 (W8A16). Over 24 chat prompts with
 greedy decoding (up to 64 tokens), 7-9 sequences are identical to the first
 stock run, and 57-60% of the tokens come before the first divergence.
-Teacher-forced on the stock run's tokens, the logprobs of the same tokens
-differ by a median of 1.1e-4 and at most 0.44. vLLM's own W8A8 path (its
-Triton block kernel, Marlin disabled, one run) is no closer to stock: 9 of
-24 identical, 69% before divergence, teacher-forced median 1.2e-4 and max
-0.50. The plugin and that Triton path also differ from each other (6 of 24
-identical, teacher-forced median 2.1e-4, max 0.51). Both quantize
+Teacher-forced on the stock run's tokens, the logprobs of the same 1,449
+tokens differ by a mean of 0.019 (p99 0.23, max 0.44); the median (1.1e-4)
+said little, since half the tokens barely move while 1% move by more than
+0.23. vLLM's own W8A8
+path (its Triton block kernel, Marlin disabled, one run) is no closer to
+stock: 9 of 24 identical, 69% before divergence, teacher-forced mean 0.019,
+p99 0.21, max 0.50. The plugin and that Triton path also differ from each
+other (6 of 24 identical, teacher-forced mean 0.023, p99 0.28, max 0.51).
+Both quantize
 activations per 1x128 group, but the Triton path does it with vLLM's
 QuantFP8 op inside the compiled graph and the plugin with blockfp8's
 kernels, and the GEMM-level tests establish equal accumulation error, not
