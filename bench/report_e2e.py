@@ -55,16 +55,18 @@ def ppl_section():
     r0 = p["runs"][0]
     ds = r0["dataset"]
     out = ["\n## wikitext-2 perplexity\n",
-           f"Source: results/e2e/wikitext2_ppl.json (bench/e2e_vllm.py --ppl), commit "
-           f"{r0['git']['commit'][:10]}{' (dirty)' if r0['git']['dirty'] else ''}. "
+           "Source: results/e2e/wikitext2_ppl.json (bench/e2e_vllm.py --ppl; a later run of "
+           "one configuration is added with --ppl --only, at the commit shown for each run). "
            f"{ds['config']} {ds['split']} ({ds['rows']} rows, {ds['file']}, sha256 "
            f"{ds['sha256'][:12]}...), joined with blank lines: {r0['tokens']} tokens, "
            f"{r0['windows']} non-overlapping windows of {r0['window']}, each scored on its own "
            f"(prompt_logprobs; {r0['scored_tokens']} scored tokens). Engine: "
            f"{json.dumps(r0['engine'])}.\n",
-           "| run | kernel (vLLM's log) | perplexity | mean NLL |", "|---|---|---|---|"]
+           "| run | commit | kernel (vLLM's log) | perplexity | mean NLL |", "|---|---|---|---|---|"]
     for r in p["runs"]:
-        out.append(f"| {r['config']} ({r['tag']}) | {', '.join(r.get('selected_from_log', [])) or '?'}"
+        out.append(f"| {r['config']} ({r['tag']}) | {r['git']['commit'][:10]}"
+                   f"{' (dirty)' if r['git']['dirty'] else ''}"
+                   f" | {', '.join(r.get('selected_from_log', [])) or '?'}"
                    f" | {r['ppl']:.4f} | {r['nll']:.5f} |")
     out += ["\nPer-token logprob differences over the same scored tokens:\n",
             "| run | vs | mean abs | p99 abs | p99.9 abs | max abs | mean signed | identical |",

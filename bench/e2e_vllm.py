@@ -23,11 +23,16 @@ per configuration: stock, plugin, triton, then stock again (its run-to-run
 noise). Writes results/e2e/wikitext2_ppl.json: perplexity per run, per-window
 NLL sums, and statistics of the per-token logprob differences between runs (the
 per-token logprobs stay in build/e2e).
+--ppl --only CONFIG re-runs one configuration on the current code and adds it to the
+existing wikitext2_ppl.json under a new tag, with the commit it ran at; the runs already
+recorded stay as they are, and the new run is compared per token with each of them (and
+with the first run of every other configuration). Refuses to record a run from a dirty tree.
 bench/report_e2e.py summarizes both files.
 
     .venv/bin/python bench/e2e_vllm.py --runs 5      # takes the lock per run itself
     .venv/bin/python bench/e2e_vllm.py --extra triton
     .venv/bin/python bench/e2e_vllm.py --ppl
+    .venv/bin/python bench/e2e_vllm.py --ppl --only plugin
 """
 
 import argparse
@@ -386,6 +391,38 @@ def drive_ppl():
     print(f"wrote {os.path.relpath(path, gpu_state.REPO)}")
 
 
+def rerun_ppl(config):
+    """Re-run one perplexity configuration and add it to the recorded results."""
+    path = os.path.join(OUT_DIR, "wikitext2_ppl.json")
+    with open(path) as f:
+        summary = json.load(f)
+    old = []
+    for r, raw in zip(summary["runs"], summary["raw_files"]):
+        with open(os.path.join(gpu_state.REPO, raw)) as f:
+            old.append(json.load(f))
+        assert old[-1]["tag"] == r["tag"] and old[-1]["config"] == r["config"]
+    tag = f"ppl{max(int(r['tag'][3:]) for r in summary['runs']) + 1}"
+    new_path = run_config(tag, config, None, ppl=True)
+    with open(new_path) as f:
+        new = json.load(f)
+    if new["git"]["dirty"]:
+        sys.exit(f"{new_path} ran from a dirty tree; not recorded")
+    if {r["scored_tokens"] for r in old} != {new["scored_tokens"]}:
+        sys.exit("runs scored different token counts")
+    name = f"{config} ({tag})"
+    # Against the first run of every other configuration, then against earlier runs of this one.
+    vs = [r for r in old if r["tag"] == "ppl1" and r["config"] != config]
+    vs += [r for r in old if r["config"] == config]
+    summary["runs"].append({k: v for k, v in new.items() if k != "logprobs"})
+    summary["logprob_diffs"] += [{"run": name, "vs": f"{r['config']} ({r['tag']})",
+                                  **logprob_diffs(new["logprobs"], r["logprobs"])} for r in vs]
+    summary["raw_files"].append(os.path.relpath(new_path, gpu_state.REPO))
+    with open(path, "w") as f:
+        json.dump(summary, f, indent=1)
+    print(f"{name}: ppl {new['ppl']:.4f} (commit {new['git']['commit'][:10]})")
+    print(f"wrote {os.path.relpath(path, gpu_state.REPO)}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=5)
@@ -396,11 +433,17 @@ def main():
     ap.add_argument("--reference")
     ap.add_argument("--ppl", action="store_true",
                     help="wikitext-2 perplexity of stock, plugin, triton and stock again")
+    ap.add_argument("--only", choices=list(CONFIG_ENV),
+                    help="with --ppl: re-run this configuration alone and add it to the results")
     args = ap.parse_args()
+    if args.only and not args.ppl:
+        ap.error("--only needs --ppl")
     if args.one and args.ppl:
         run_one_ppl(args.one, args.out)
     elif args.one:
         run_one(args.one, args.out, args.reference)
+    elif args.ppl and args.only:
+        rerun_ppl(args.only)
     elif args.ppl:
         drive_ppl()
     elif args.extra:
