@@ -131,40 +131,40 @@ SM clock during the runs (nvidia-smi, 1 s samples): median 2790 MHz, min 2520, m
 
 ## Batch sizes outside the tuning grid (cold L2)
 
-Source: results/gemm/qwen3_8b_offgrid.json, commit 35d0b77ed8 (dirty), 2026-11-03T23:15:53Z, 10 interleaved runs. The plan tables and the tuned Triton configs are tuned on the powers of two 1-8192 only; these M lie between them: blockfp8 takes the entry with the smallest tabulated M >= M, tuned Triton the nearest tabulated M (vLLM's rule; Triton M column).
+Source: results/gemm/qwen3_8b_offgrid.json, commit 1199990f35, 2026-11-03T23:41:58Z, 10 interleaved runs. The plan tables and the tuned Triton configs are tuned on the powers of two 1-8192 only; these M lie between them: blockfp8 takes the entry with the smallest tabulated M >= M, tuned Triton the nearest tabulated M (vLLM's rule; Triton M column).
 Ratios are baseline time / blockfp8 time (Marlin: / blockfp8.linear time).
 
 | layer | M | blockfp8 us | linear us (runs) | vs Triton | vs Triton tuned (M) | vs Marlin | vs cuBLASLt FP8/tensor |
 |---|---|---|---|---|---|---|---|
-| qkv | 3 | 28.3 | 30.3 (quant+gemm) | 1.65x | 1.01x (2) | 1.06x | 1.06x |
+| qkv | 3 | 28.3 | 30.3 (quant+gemm) | 1.64x | 1.01x (2) | 1.06x | 1.06x |
 | qkv | 12 | 28.3 | 30.3 (quant+gemm) | 1.63x | 1.01x (8) | 1.11x | 1.06x |
-| qkv | 24 | 28.4 | 30.3 (quant+gemm) | 1.63x | 1.01x (16) | 1.10x | 1.06x |
-| qkv | 48 | 29.4 | 31.6 (quant+gemm) | 1.57x | 1.00x (32) | 1.13x | 1.07x |
-| qkv | 100 | 32.5 | 34.9 (quant+gemm) | 1.43x | 1.07x (128) | 1.81x | 1.02x |
-| qkv | 384 | 85.8 | 88.9 (quant+gemm) | 1.18x | 0.97x (256) | 1.41x | 0.84x |
-| qkv | 768 | 139.0 | 143.7 (quant+gemm) | 1.14x | 1.04x (512) | 1.67x | 0.90x |
-| qkv | 3000 | 481.7 | 491.8 (quant+gemm) | 1.14x | 1.07x (2048) | 1.90x | 0.94x |
-| o | 3 | 19.6 | 21.5 (quant+gemm) | 2.28x | 1.01x (2) | 1.05x | 1.02x |
-| o | 12 | 19.6 | 21.6 (quant+gemm) | 2.29x | 1.00x (8) | 1.06x | 1.02x |
+| qkv | 24 | 28.3 | 30.4 (quant+gemm) | 1.64x | 1.01x (16) | 1.10x | 1.06x |
+| qkv | 48 | 29.4 | 31.6 (quant+gemm) | 1.58x | 1.00x (32) | 1.13x | 1.08x |
+| qkv | 100 | 32.5 | 34.8 (quant+gemm) | 1.43x | 1.07x (128) | 1.82x | 1.01x |
+| qkv | 384 | 76.1 | 78.7 (quant+gemm) | 1.33x | 1.09x (256) | 1.60x | 0.94x |
+| qkv | 768 | 134.7 | 139.9 (quant+gemm) | 1.18x | 1.08x (512) | 1.72x | 0.93x |
+| qkv | 3000 | 481.8 | 492.1 (quant+gemm) | 1.14x | 1.07x (2048) | 1.90x | 0.94x |
+| o | 3 | 19.6 | 21.6 (quant+gemm) | 2.29x | 1.00x (2) | 1.05x | 1.02x |
+| o | 12 | 19.6 | 21.6 (quant+gemm) | 2.30x | 1.01x (8) | 1.06x | 1.02x |
 | o | 24 | 19.7 | 21.7 (quant+gemm) | 2.28x | 1.00x (16) | 1.11x | 1.01x |
-| o | 48 | 20.7 | 22.8 (quant+gemm) | 2.17x | 0.98x (32) | 1.12x | 0.97x |
-| o | 100 | 23.1 | 25.4 (quant+gemm) | 1.95x | 0.99x (128) | 1.73x | 0.93x |
-| o | 384 | 57.1 | 60.1 (quant+gemm) | 1.18x | 1.07x (256) | 1.47x | 0.79x |
+| o | 48 | 20.7 | 22.8 (quant+gemm) | 2.18x | 0.99x (32) | 1.12x | 0.97x |
+| o | 100 | 23.2 | 25.4 (quant+gemm) | 1.95x | 0.99x (128) | 1.73x | 0.93x |
+| o | 384 | 48.7 | 52.0 (quant+gemm) | 1.39x | 1.26x (256) | 1.70x | 0.93x |
 | o | 768 | 88.0 | 92.5 (quant+gemm) | 1.18x | 1.03x (512) | 1.77x | 0.89x |
-| o | 3000 | 321.8 | 333.0 (quant+gemm) | 1.16x | 1.07x (2048) | 1.87x | 0.94x |
-| gate_up | 3 | 108.2 | 109.8 (quant+gemm) | 1.10x | 1.01x (2) | 1.05x | 1.04x |
-| gate_up | 12 | 109.0 | 110.0 (quant+gemm) | 1.10x | 1.01x (8) | 1.07x | 1.04x |
+| o | 3000 | 322.0 | 333.1 (quant+gemm) | 1.16x | 1.07x (2048) | 1.87x | 0.94x |
+| gate_up | 3 | 108.2 | 109.8 (quant+gemm) | 1.11x | 1.01x (2) | 1.05x | 1.04x |
+| gate_up | 12 | 109.1 | 110.0 (quant+gemm) | 1.10x | 1.01x (8) | 1.07x | 1.04x |
 | gate_up | 24 | 110.9 | 111.1 (quant+gemm) | 1.09x | 1.00x (16) | 1.06x | 1.03x |
-| gate_up | 48 | 114.8 | 115.0 (quant+gemm) | 1.06x | 1.00x (32) | 1.07x | 1.01x |
+| gate_up | 48 | 114.5 | 114.9 (quant+gemm) | 1.07x | 1.01x (32) | 1.07x | 1.01x |
 | gate_up | 100 | 121.7 | 119.3 (quant+gemm) | 1.22x | 1.00x (128) | 2.23x | 0.99x |
-| gate_up | 384 | 250.3 | 253.0 (quant+gemm) | 1.16x | 1.05x (256) | 2.14x | 0.92x |
-| gate_up | 768 | 501.6 | 506.1 (quant+gemm) | 1.12x | 1.04x (512) | 2.05x | 0.92x |
-| gate_up | 3000 | 1943.6 | 1954.8 (quant+gemm) | 1.11x | 1.06x (2048) | 2.07x | 0.93x |
+| gate_up | 384 | 250.5 | 253.2 (quant+gemm) | 1.15x | 1.05x (256) | 2.14x | 0.92x |
+| gate_up | 768 | 503.0 | 507.5 (quant+gemm) | 1.12x | 1.04x (512) | 2.04x | 0.92x |
+| gate_up | 3000 | 1947.2 | 1958.1 (quant+gemm) | 1.11x | 1.06x (2048) | 2.06x | 0.93x |
 | down | 3 | 55.9 | 57.8 (quant+gemm) | 2.33x | 1.02x (2) | 1.01x | 1.02x |
 | down | 12 | 56.2 | 58.3 (quant+gemm) | 2.34x | 1.02x (8) | 1.01x | 1.01x |
 | down | 24 | 56.4 | 58.6 (quant+gemm) | 2.33x | 1.03x (16) | 1.02x | 1.01x |
-| down | 48 | 58.7 | 61.2 (quant+gemm) | 2.24x | 1.01x (32) | 1.01x | 0.98x |
+| down | 48 | 58.7 | 61.2 (quant+gemm) | 2.24x | 1.00x (32) | 1.01x | 0.98x |
 | down | 100 | 64.2 | 67.1 (quant+gemm) | 2.05x | 0.99x (128) | 1.53x | 1.03x |
-| down | 384 | 161.3 | 167.2 (quant+gemm) | 1.25x | 0.93x (256) | 1.42x | 0.97x |
-| down | 768 | 319.7 | 329.3 (quant+gemm) | 0.96x | 1.10x (512) | 1.40x | 0.71x |
-| down | 3000 | 942.6 | 1027.2 (quant+gemm) | 1.18x | 1.10x (2048) | 1.74x | 0.95x |
+| down | 384 | 141.9 | 144.0 (quant+gemm) | 1.42x | 1.05x (256) | 1.64x | 1.09x |
+| down | 768 | 248.3 | 255.9 (quant+gemm) | 1.24x | 1.41x (512) | 1.80x | 0.92x |
+| down | 3000 | 943.1 | 1028.0 (quant+gemm) | 1.18x | 1.10x (2048) | 1.74x | 0.95x |
