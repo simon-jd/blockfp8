@@ -35,6 +35,7 @@ import json
 import math
 import os
 import random
+import signal
 import statistics
 import subprocess
 import sys
@@ -205,11 +206,17 @@ def run_one(config, out, reference):
 
 
 def shut_down(llm):
-    del llm  # shuts the engine process down before this process (and its lock) goes away
-    import multiprocessing
+    """Stop the engine and every child process, then exit. An EngineCore left
+    running inherits the GPU lock's file descriptor and holds the lock."""
+    import psutil
 
-    for child in multiprocessing.active_children():
-        child.join(timeout=60)
+    llm.llm_engine.engine_core.shutdown(timeout=60)
+    children = psutil.Process().children(recursive=True)
+    _, alive = psutil.wait_procs(children, timeout=30)
+    for p in alive:
+        print(f"killing leftover child {p.pid} ({p.name()})", flush=True)
+        p.kill()
+    psutil.wait_procs(alive, timeout=10)
     # Interpreter teardown after vLLM aborts in a C++ destructor; nothing is left to do.
     sys.stdout.flush()
     os._exit(0)
@@ -283,8 +290,15 @@ def run_config(tag, config, reference, ppl=False):
         cmd += ["--ppl"]
     t0 = time.time()
     with open(log, "w") as f:
-        p = subprocess.run(cmd, env=dict(base_env, **CONFIG_ENV[config]), stdout=f,
-                           stderr=subprocess.STDOUT)
+        # Own process group, so nothing of this run can outlive it holding the lock.
+        p = subprocess.Popen(cmd, env=dict(base_env, **CONFIG_ENV[config]), stdout=f,
+                             stderr=subprocess.STDOUT, start_new_session=True)
+        p.wait()
+    try:
+        os.killpg(p.pid, signal.SIGKILL)
+        print(f"{tag} {config}: killed processes left in its group", flush=True)
+    except ProcessLookupError:
+        pass
     if p.returncode != 0 or not os.path.exists(out):
         sys.exit(f"{tag} {config} failed (exit {p.returncode}); see {log}")
     with open(log, errors="replace") as f:
