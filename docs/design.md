@@ -67,8 +67,14 @@ promotion cheap (below).
 5. **Two-level accumulation.** The MMAs of one K tile accumulate into a
    separate FP32 partial; after the tile, every accumulator is promoted with
    one FMA on the CUDA cores, `acc = fma(partial, sa[m,kb] * sb[nb,kb], acc)`,
-   and the partial is cleared. The scale loads for a tile are issued before
-   its MMAs and consumed after them, so their latency is hidden.
+   and the partial is cleared. A tile's activation scales travel with it:
+   one thread per tile row issues a 4-byte `cp.async` of the row's scale
+   into a per-stage slot, in the tile's own cp.async group, and the scales
+   are read from shared memory right after the barrier that publishes the
+   stage. The weight scale (one float per K tile) is a register load one
+   tile ahead. Until commit bed9867 the activation scales were `__ldg`
+   loads one tile ahead; in the weight-streaming regime they stalled the
+   pipeline (next section but one).
 6. **Epilogue.** bf16 pairs (adjacent accumulator columns) stored straight
    from registers.
 7. **Split-K.** For small M a CTA handles only part of K. Each CTA writes
@@ -88,9 +94,10 @@ promotion cheap (below).
    row's amax with shuffles, divide, convert with `cvt.rn.satfinite.e4m3x2`
    and store 8-byte pieces into the next tile's e4m3 stage; the barrier the
    K tile ends with anyway publishes that stage, so the fused kernel has no
-   extra barrier and the same shared stages as the unfused one (plus one
-   float scale per row and stage). Rows past M are skipped: dividing their
-   zeros by an eps-sized scale would take the slow path of the IEEE division.
+   extra barrier and the same shared stages and scale slots as the unfused
+   one; the quantizer writes the scales the unfused kernel copies. Rows
+   past M are skipped: dividing their zeros by an eps-sized scale would
+   take the slow path of the IEEE division.
 
 ## Precision (results/micro/mma_precision.json)
 
@@ -141,97 +148,165 @@ promotion), which the tests also check.
 
 Twelve configurations are compiled (`csrc/gemm_sm89.cu`), named
 `m<BM>n<BN>s<stages>w<warps>[b2]`; `b2` means `__launch_bounds__` allows two
-CTAs per SM. Six have 128-column tiles and six 64-column tiles (16, 32, 64 and
-128 rows). `bench/autotune.py` timed every configuration with every split
-count on the Qwen3-8B shapes (cold L2) and `csrc/plan_table.inc` freezes the
-winners (all timings in `results/gemm/autotune.json`):
+CTAs per SM (the first launch on a device checks that the compiled kernel
+really gets them). Six have 128-column tiles and six 64-column tiles (16,
+32, 64 and 128 rows). `bench/autotune.py` times every configuration with
+every split count on the Qwen3-8B shapes at every power of two M = 1-8192,
+with the benchmark's own harness (`bench_gemm.time_calls`: CUPTI kernel
+spans, weights cold, activations L2-resident, 5 interleaved runs), and
+`csrc/plan_table.inc` freezes the winners (all timings in
+`results/gemm/autotune.json`):
 
-- M = 1-16: `m16n64s4w4b2` (16x64 tile, 4 stages, two CTAs per SM) with
-  split-K 1-4, except qkv at M = 1 (`m16n128s5w4`).
-- M = 64-256: 64-column tiles (`m32n64s4w4b2`, `m16n64s4w4b2`,
-  `m64n64s3w4b2`), except gate_up at M = 256 (`m64n128s2w4b2`).
-- M = 1024-8192: `m128n64s2w4b2` (128x64, two 48 KB stages, two CTAs per
-  SM) for o and gate_up and at M = 1024 everywhere; `m64n128s2w4b2` for qkv
-  and down at 4096-8192.
+- M = 1-32: `m16n64s4w4b2` (16x64 tile, 4 stages, two CTAs per SM) without
+  split-K; down (K = 12288) with 2 splits.
+- M = 64: `m32n64s4w4b2` (down: 2 splits). M = 128-256: `m64n64s3w4b2`, or
+  `m128n64s3w8` (o at 256, down at 128-256), `m64n128s2w4b2` for gate_up at
+  256.
+- M >= 512: `m64n128s2w4b2` (64x128, two 48 KB stages, two CTAs per SM),
+  except down at M = 512-1024 (`m128n128s3w8`, one CTA of 8 warps).
 
-The 64-column tiles are what fixed the middle range. With only 128-wide
-tiles, o at M = 64 has 32 column tiles: 32 CTAs with 64-row tiles (too few
-for 128 SMs), or 128 CTAs with 16-row tiles, one per SM, each streaming
-512 KB of weights. 64-wide tiles double the column tiles: `m16n64s4w4b2`
-runs 256 CTAs, two per SM, each streaming 256 KB. The autotuned time for o at M = 64
-went from 28.7 us (`m16n128s5w4`) to 25.5 us (`m16n64s4w4b2`), and qkv at
-M = 64 from 37.9 to 34.8 us (CUDA-event timings, `results/gemm/autotune.json`
-before and after commit c989c75).
+Until commit 5383991 the sweep timed single calls with CUDA events
+(activations cold, about 1 us resolution) on the eight benchmark batch
+sizes only, and a batch size between two entries ran the plan of the next
+one up. Both showed up as losses: `results/gemm/plan_probe_426750a.json`
+times every plan at chosen shapes next to the tuned Triton configs, and the
+automatic plan was up to 21% slower than the best plan the kernel already
+had (qkv at M = 512, which ran the M = 1024 plan: 109.8 against 90.8 us
+for `m64n128s2w4b2`; o and qkv at M = 32: 22.5 and 31.6 us against 21.1 and
+30.2).
 
-The second CTA per SM is what makes prefill fast. For gate_up at M = 8192
-the 64x128 tile took 6576 us with four stages and one CTA per SM and 5390 us
-with two stages and two CTAs; the 128x128 tile with 8 warps (one CTA per SM,
-234 registers) took 6176 us (first sweep). With a single resident CTA, every
-K tile ends with a barrier and the promotion FMAs, during which the tensor
-pipes have nothing to do; a second, independently scheduled CTA fills those
-gaps.
+Between two tabulated batch sizes, `choose_plan` starts from the entry
+above (the smallest tabulated M >= M). For M >= 256, where the GEMM is
+compute bound, that entry's tiles can load the SMs unevenly: down at
+M = 768 got the M = 1024 plan, 192 CTAs of 128x128 on 128 SMs, so half the
+SMs ran two tiles and half one. `balanced_entry` therefore compares every
+plan tabulated for the shape at M / 4 to 4 M (tiles of at least 64 rows)
+by the work of its busiest SM, ceil(CTAs / SMs) x BM x BN x K tiles per
+CTA, and takes the least (ties keep the entry above, then the nearest
+entry; commit 667fc95). On the held-out batch sizes
+(`results/gemm/qwen3_8b_offgrid.json`, against the recording at 35d0b77)
+it took qkv, o and down at M = 384 from 85.8, 57.1 and 161.3 us to 76.1,
+48.7 and 141.9 us, and qkv and down at M = 768 from 139.0 and 319.7 us to
+134.7 and 248.3 us. The rule was written after those cells were probed
+(`results/gemm/plan_probe_6a2a470.json`: the best plans had 3-4.5 CTAs per
+SM, the plans of the entry above 0.75-2.25), so they no longer test it
+blind. On six batch sizes it was not designed on (M = 320, 640, 1280, 1536,
+2500, 6000; `results/gemm/qwen3_8b_check_6a2a470.json` and
+`..._check_667fc95.json`) it changes four cells: o at M = 320 56.5 -> 47.1
+us, down at 320 160.7 -> 139.5, down at 640 318.9 -> 244.1, and gate_up at
+320 220.3 -> 223.9 (2% slower).
+
+The 64-column tiles are what fixed the middle range in the first place.
+With only 128-wide tiles, o at M = 64 has 32 column tiles: 32 CTAs with
+64-row tiles (too few for 128 SMs), or 128 CTAs with 16-row tiles, one per
+SM, each streaming 512 KB of weights. 64-wide tiles double the column tiles.
+
+The second CTA per SM mattered for prefill while the activation scales were
+global loads: for gate_up at M = 8192 the first sweep measured 6576 us for
+the 64x128 tile with four stages and one CTA per SM, 5390 us with two stages
+and two CTAs, and 6176 us for the 128x128 tile with 8 warps. With the scales
+in shared memory the 8-warp 128x128 tile is within 0.6% of the two-CTA
+64x128 tile (5297 against 5268 us), while the four-stage single-CTA 64x128
+tile still takes 6108 us (`results/gemm/autotune.json`): with one 4-warp CTA
+per SM, the barrier and the promotion FMAs that end every K tile leave the
+tensor pipes idle, which a second CTA or more warps fill.
 
 Fused quantization has its own table (`csrc/fused_plan_table.inc`, from
 `bench/autotune.py --fused`, results in `results/gemm/autotune_fused.json`):
-five small-M configurations, each timed against `quantize_cuda` + `gemm`
-with the frozen plan, both with the bf16 activations L2-resident.
-`prefers_fused` is true only where the fused kernel was faster: qkv at
-M = 1-16, o at M = 4-16 and down at M = 16, by 0.1-1.1 us (CUDA-event
-timings, about 1 us resolution in practice, so these choices are close to
-coin flips). It tied on o at
-M = 1, lost by 1-2 us on gate_up at M = 1-16 and down at M = 1-4, and lost by
-4-365 us at M >= 64, where every CTA of a tile row re-quantizes the same rows
-(3.1x slower for gate_up at M = 256).
+five small-M configurations at M = 1-256, each timed against
+`quantize_cuda` + `gemm` with the frozen plan in the same harness. Since the
+plain GEMM stages its activation scales in shared memory, the fused kernel
+loses everywhere: at M = 1-16 by 0.2-1.1 us on qkv, o and down (qkv 30.9
+against 30.3 us at M = 1, o 22.2 against 21.6 at M = 16) and by 1.6-5.5 us
+on gate_up, by 1.0-24 us at M = 32-64 and by up to 358 us at M = 256, where
+every CTA of a tile row re-quantizes the same rows. `prefers_fused` is now
+false for every shape, so `linear` always runs
+`quantize_cuda` and then the GEMM.
 
 ## Measured performance (results/gemm/summary.md)
 
 Peaks on this GPU (results/micro): FP8 MMA with FP32 accumulation 1024 FLOP
 per SM per clock, 367 TFLOPS at the 2.80 GHz the microbenchmark ran at
-(median SM clock during the GEMM runs: 2.78 GHz); DRAM read 957 GB/s;
+(median SM clock during the GEMM runs: 2.79 GHz); DRAM read 957 GB/s;
 L2-resident reads up to 4.4 TB/s. "Cold L2" means the weights are evicted
 (a 256 MB read) and the call's activations are then read back into L2, as
-they are in a model where the previous layer has just written them.
+they are in a model where the previous layer has just written them. All
+figures below are cold unless marked warm; recorded at commit 35d0b77.
 
-- **Prefill (M >= 1024):** 307-321 TFLOPS, 84-87% of the MMA peak. With the
-  activation quantization included (`linear`), 1.67-2.03x faster than vLLM's
+- **Prefill (M >= 1024):** 305-330 TFLOPS, 83-90% of the MMA peak. With the
+  activation quantization included (`linear`), 1.72-2.08x faster than vLLM's
   actual default on this GPU (FP8 Marlin, whose bf16 MMAs peak at half the
-  FP8 rate). GEMM only: 1.08-1.21x faster than vLLM's Triton kernel as
-  shipped and 1.01-1.09x faster than the same kernel tuned here. cuBLASLt
-  with one scale per tensor is up to 9% faster (0.91-0.93x of our time) on
-  every shape but one, because it has no per-block scales to apply; on down
-  at M = 8192 it measured 1.27x slower.
-- **Decode (M <= 16):** a weight stream at 805-935 GB/s (84-98% of the
-  measured DRAM read bandwidth). GEMM only, this is 1.02-1.14x faster than
-  Marlin, which reads the same FP8 bytes. The activation quantization adds
-  0.9-2.1 us on top (fused where that is faster, else blockfp8's own
-  quantization kernel), against 1.8-3.0 us with vLLM's kernel, so `linear`
-  is 0.99-1.06x of Marlin: ahead on qkv, o and gate_up, even on down at
-  M = 1-4, and 1% behind on down at M = 16. Tuned Triton is up to 7% faster
-  on o and qkv at M = 1-16.
-- **Middle (M = 64-256):** 0.95-1.04x of tuned Triton (before the 64-column
-  tiles: 0.79-1.01x). Still behind by 2-4% at M = 64 on all four shapes and
-  by 5% on qkv at M = 256. cuBLASLt (per tensor) is up to 17% faster (0.83-1.01x).
-  Against Marlin, `linear` is 1.15-2.11x except down at M = 64, where it
-  ties (1.00x): Marlin (64.4 us) and the GEMM alone (61.4 us) are both
-  close to the 52.6 us it takes to read the 50 MB of weights, and `linear`
-  adds 2.6 us of quantization. In the previous recording (commit b3f50b9)
-  the same cells were 63.0 and 63.6 us, a 5% loss; cells of unchanged
-  kernels moved by up to 4.5% between the two recordings.
-- **Off the tuning grid** (M = 2, 8, 32, 100, 512, 3000; second table in
-  results/gemm/summary.md): the plan table takes the entry with the
-  smallest tabulated M >= M, tuned Triton the nearest tabulated M. At
-  M = 2, 8 and 100 the kernel loses at most 5% to any baseline but cuBLASLt
-  (o at M = 8: 0.95x of tuned Triton; cuBLASLt up to 11% faster). M = 32 (planned as 64) loses 2-7% to
-  Marlin and 7-14% to tuned Triton on qkv, o and down. qkv at M = 512
-  (planned as 1024) takes 110.9 us, twice M = 256's 54.7 us, and loses to
-  every baseline but Marlin (0.93x of default Triton, 0.88x of tuned,
-  0.71x of cuBLASLt). A plan table on a finer M grid would be the fix; it
-  was not built.
+  FP8 rate). GEMM only: 1.10-1.21x faster than vLLM's Triton kernel as
+  shipped and 1.03-1.09x faster than the same kernel tuned here. cuBLASLt
+  with one scale per tensor is up to 9% faster (0.91-0.96x of our time),
+  except on down at M = 8192 (1.23x slower).
+- **Decode (M = 1-32):** a weight stream at 862-933 GB/s (90-97% of the
+  measured DRAM read bandwidth). GEMM only, 1.00-1.06x of tuned Triton and
+  1.00-1.07x of cuBLASLt: no loss to either. `linear` adds the separate
+  quantization kernel (0.5-2.2 us; vLLM's own adds 1.4-3.2 us) and is
+  1.00-1.10x of Marlin, which reads the same FP8 bytes: ties on down at
+  M = 1-16 (58.1-58.7 us both; 0.998x at M = 4 and 16), ahead elsewhere.
+- **Middle (M = 64-512):** 106-316 TFLOPS; 1.00-1.19x of tuned Triton,
+  1.04-2.22x of default Triton, 1.03-2.16x of Marlin (`linear`). cuBLASLt
+  per tensor is up to 12% faster (0.88-1.04x; o at M = 256: 28.6 against
+  32.6 us).
+- **Warm L2** (weights L2-resident, which a decode step of an 8 GB model
+  never sees): GEMM only, tuned Triton is 12% faster on qkv at M = 32 (13.2
+  against 15.0 us) and 2% on gate_up at M = 64; with the quantization kernel
+  included, Marlin is faster on o at M = 1-16 (0.81-0.99x) and on down at
+  M = 1 and 32 (0.99x, 0.96x), because about 2 us of quantization launch is
+  a quarter of an 8 us GEMM.
+
+Against the previous recording (commit 3660f45, the kernel and plan table
+before these changes):
+qkv at M = 1 28.2 us (was 29.3), o at M = 16 19.5 (21.1), down at M = 16 56.6
+(57.4), qkv at M = 256 50.1 (54.7), down at M = 256 86.7 (98.8), qkv at
+M = 512 88.0 (110.9 off the grid then), gate_up at M = 8192 5270 (5374).
+- **Off the tuning grid** (M = 3, 12, 24, 48, 100, 384, 768, 3000, between
+  the powers of two; second table of results/gemm/summary.md, recorded at
+  1199990): `linear` 1.01-2.23x of Marlin; GEMM only 1.07-2.34x of default
+  Triton, 0.99-1.41x of tuned Triton (with the config of the nearest tuned
+  M, as vLLM picks it) and 0.89-1.09x of cuBLASLt. Still behind: tuned
+  Triton by 1% on o at M = 48 and 100 and on down at M = 100, cuBLASLt by up
+  to 11% (o at M = 768).
 
 The tuned Triton configs are the fastest of each shape's five best warm-L2
 candidates (CUDA events), re-timed with the same cold-L2 CUPTI harness as
-these tables (`bench/tune_triton.py`); that changed 11 of 32 picks (the warm
-pick would have been up to 12% slower, qkv at M = 64). The warm-L2 tables are in the same file.
+these tables (`bench/tune_triton.py`), now on the same powers of two as the
+plan table.
+
+## Where the losses came from (results/gemm/plan_probe_426750a.json)
+
+`bench/plan_probe.py` times every configuration x split count at a shape
+with the benchmark's harness, next to vLLM's Triton kernel with every tuned
+config of that layer, and records each plan's CTA count. At the commit
+before these changes it found two causes.
+
+1. **Plan choice.** The automatic plan was up to 21% slower than the best
+   compiled plan (qkv at M = 512: 109.8 against 90.8 us; o, qkv and down at
+   M = 32: 1.4-1.9 us slower), because the table was timed with CUDA events
+   on cold activations and only on the eight benchmark batch sizes. Fixed by
+   tuning on every power of two with the benchmark's harness (above).
+2. **Activation-scale loads in the weight stream.** Even the best plan
+   trailed tuned Triton by 3-7% at M = 16-64 on qkv, o and down, while it
+   tied at M = 1-4. With the same CTAs and the same weight bytes,
+   `m16n64s4w4b2` without split-K took 22.4 us for o at M = 16 against
+   19.6 us at M = 4, and 67.0 against 56.7 us for down: the cost grew with
+   the number of real rows and with K. A build that loaded no activation
+   scales (wrong results, timing only) ran M = 16 at the M = 4 speed (o 19.4,
+   down 56.8 us); one that loaded no activation tile instead did not (22.9,
+   66.4 us). The scales were `__ldg` loads one K tile ahead whose latency
+   showed up in every K tile; staging them with the tile's own cp.async
+   group (commit bed9867) made the same plans 19.6 and 57.4 us
+   (`results/gemm/autotune.json`). It also sped up the middle and prefill
+   range (benchmark: qkv at M = 256 54.7 -> 50.1 us, gate_up at M = 8192
+   5374 -> 5270 us). The two diagnostic builds were not committed; their
+   numbers are in the message of commit bed9867.
+
+What was not the cause: wave quantization at decode sizes (Triton streams
+qkv at M = 16 with 96 CTAs, fewer than the 128 SMs, as fast as anything
+here), split-K count (the best decode plans need none, except down), and an
+L2 prefetch of the weight scales (no change).
 
 ## Why "+q" looked almost free for o at M = 64 (results/gemm/l2_probe.json)
 
@@ -269,24 +344,32 @@ a fresh process per run under the GPU lock, five interleaved runs per
 configuration, `gpu_memory_utilization` 0.80, prefix caching off, and reads
 vLLM's log to confirm which kernel it selected in every run.
 
+Recorded at commit 6a2a470 (retuned tables, scales in shared memory):
+
 | | stock (Marlin W8A16) | plugin (blockfp8 W8A8) | speedup |
 |---|---|---|---|
-| prefill, 64 x 256 tokens | 10228 tok/s | 17519 tok/s | 1.71x |
-| prefill, 16 x 1024 tokens | 10050 tok/s | 17038 tok/s | 1.70x |
-| prefill, 4 x 4096 tokens | 9460 tok/s | 15461 tok/s | 1.63x |
-| decode TPOT, batch 1 | 10.12 ms | 9.95 ms | 1.017x |
-| decode TPOT, batch 4 | 10.24 ms | 10.12 ms | 1.012x |
-| decode TPOT, batch 16 | 10.84 ms | 10.72 ms | 1.011x |
-| decode TPOT, batch 64 | 14.08 ms | 12.91 ms | 1.090x |
+| prefill, 64 x 256 tokens | 10315 tok/s | 18042 tok/s | 1.75x |
+| prefill, 16 x 1024 tokens | 10160 tok/s | 17576 tok/s | 1.73x |
+| prefill, 4 x 4096 tokens | 9551 tok/s | 15801 tok/s | 1.65x |
+| decode TPOT, batch 1 | 10.10 ms | 9.86 ms | 1.024x |
+| decode TPOT, batch 4 | 10.23 ms | 10.01 ms | 1.023x |
+| decode TPOT, batch 16 | 10.84 ms | 10.51 ms | 1.032x |
+| decode TPOT, batch 64 | 14.08 ms | 12.65 ms | 1.113x |
 
-Prefill gains less than the GEMMs alone (1.67-2.02x in the GEMM recording
-of that time) because attention, norms and sampling do not change; decode at
-batch 1-16 gains 1-2%, in line with the GEMM-level 0.97-1.06x against
-Marlin then (0.99-1.06x now; the linear layers are a weight stream either
-way), and batch 64 gains 9%, where `linear` was 1.13-1.15x faster than
-Marlin on qkv, o and gate_up (and 0.95x on down).
+Before (commit ec74438, the plan table of that time): prefill 1.63-1.71x,
+TPOT 1.011-1.017x at batch 1-16 and 1.090x at 64. Every GEMM these runs time
+has a tabulated M (decode 1, 4, 16, 64; prefill chunks of 8192 tokens; TPOT
+prompt batches of 128-8192 tokens), so the later balanced choice between
+entries (commit 667fc95) does not change their plans. Prefill gains less
+than the GEMMs alone (1.72-2.08x) because attention, norms and sampling do
+not change; decode at batch 1-16 gains 2-3%, in line with the GEMM-level
+1.00-1.10x against Marlin (the linear layers are a weight stream either
+way), and batch 64 gains 11%, where `linear` is 1.03-1.23x faster than
+Marlin.
 
-**Perplexity** (results/e2e/wikitext2_ppl.json, `bench/e2e_vllm.py --ppl`):
+**Perplexity** (results/e2e/wikitext2_ppl.json, `bench/e2e_vllm.py --ppl`;
+recorded at commit 5fab662 with the plan table of that time and not
+re-measured):
 the wikitext-2-raw-v1 test split, its 4,358 lines joined with blank lines,
 is 298,931 tokens; it is cut into 147 non-overlapping windows of 2048 tokens,
 each scored on its own with prompt_logprobs (every token but a window's
@@ -298,24 +381,25 @@ stock are the same for both W8A8 kernels (mean 0.062, p99 0.48, mean signed
 larger (mean 0.079, p99 0.62): they disagree token by token as much as each
 does with stock, but cost the same perplexity.
 
-**Outputs.** They are not the same, and they are not expected to be: the
-plugin quantizes activations to e4m3 (W8A8, the scheme the checkpoint was
-made for), Marlin keeps them in bf16 (W8A16). Over 24 chat prompts with
-greedy decoding (up to 64 tokens), 7-9 sequences are identical to the first
-stock run, and 57-60% of the tokens come before the first divergence.
-Teacher-forced on the stock run's tokens, the logprobs of the same 1,449
-tokens differ by a mean of 0.019 (p99 0.23, max 0.44); the median (1.1e-4)
-said little, since half the tokens barely move while 1% move by more than
-0.23. vLLM's own W8A8
-path (its Triton block kernel, Marlin disabled, one run) is no closer to
-stock: 9 of 24 identical, 69% before divergence, teacher-forced mean 0.019,
-p99 0.21, max 0.50. The plugin and that Triton path also differ from each
-other (6 of 24 identical, teacher-forced mean 0.023, p99 0.28, max 0.51).
-Both quantize
-activations per 1x128 group, but the Triton path does it with vLLM's
-QuantFP8 op inside the compiled graph and the plugin with blockfp8's
-kernels, and the GEMM-level tests establish equal accumulation error, not
-bitwise-equal results; these runs do not show which difference dominates. vLLM itself is not run-to-run deterministic
-here either: one of four repeated stock runs differed on one prompt
-(23 of 24 identical), and one of five plugin runs differed from the other
-four.
+**Outputs** (recorded at 6a2a470; the 24-prompt prefill has an untabulated
+M, so the later balanced choice may change its plan). They are not the
+same, and they are not expected to be: the plugin quantizes activations to
+e4m3 (W8A8, the scheme the checkpoint was made for), Marlin keeps them in
+bf16 (W8A16). Over 24 chat prompts with greedy decoding (up to 64 tokens),
+9 sequences are identical to the first stock run in every plugin run, and
+59.5-60.0% of the tokens come before the first divergence. Teacher-forced
+on the stock run's tokens, the logprobs of the same 1,449 tokens differ by
+a mean of 0.018-0.019 (p99 0.22-0.24, max 0.35-0.44). vLLM's own W8A8 path
+(its Triton block kernel, Marlin disabled, one run) is no closer to stock:
+9 of 24 identical, 69% before divergence, teacher-forced mean 0.019, p99
+0.21, max 0.50. The plugin and that Triton path also differ from each
+other (7 of 24 identical, teacher-forced mean 0.023, p99 0.27-0.28, max
+0.51). Both quantize activations per 1x128 group, but the Triton path does
+it with vLLM's QuantFP8 op inside the compiled graph and the plugin with
+blockfp8's kernels, and the GEMM-level tests establish equal accumulation
+error, not bitwise-equal results; these runs do not show which difference
+dominates. vLLM itself is not run-to-run deterministic here either: of the
+four repeated stock runs, two matched the first on every prompt and two
+did not (23 and 19 of 24 identical); all five plugin runs have the same 9
+identical sequences, but one diverges from stock earlier (862 against 869
+tokens before the first divergence).

@@ -21,9 +21,10 @@ multi-stage pipeline into swizzled shared memory; ldmatrix; two-level
 accumulation (MMA partials per 128-wide K block, promoted with that block's
 scales on the CUDA cores); 64- and 128-column tiles, two CTAs per SM, and
 deterministic split-K for small batches; a per-shape plan table from an
-autotuning sweep. For decode batches the per-token activation quantization
-runs inside the GEMM (`gemm_bf16`), elsewhere in a separate kernel of its
-own; `blockfp8.linear` picks per shape. A `vllm.general_plugins` entry point
+autotuning sweep. The per-token activation quantization runs in a kernel
+of its own before the GEMM (`blockfp8.linear`); a fused variant that
+quantizes inside the GEMM (`gemm_bf16`) exists but measured slower on every
+shape. A `vllm.general_plugins` entry point
 (`blockfp8_vllm`) puts the kernel ahead of Marlin in vLLM's own kernel list.
 Details: [docs/design.md](docs/design.md),
 [docs/design-tradeoffs.md](docs/design-tradeoffs.md).
@@ -32,33 +33,36 @@ Details: [docs/design.md](docs/design.md),
 L2-resident; median of 10 interleaved runs, kernel spans from CUPTI; full
 tables in [results/gemm/summary.md](results/gemm/summary.md)):
 
-| | M = 1-16 (decode) | M = 64-256 | M = 1024-8192 (prefill) |
+| | M = 1-32 (decode) | M = 64-512 | M = 1024-8192 (prefill) |
 |---|---|---|---|
-| this kernel | 805-935 GB/s of weights (DRAM read peak 957) | 102-298 TFLOPS | 307-321 TFLOPS (MMA peak 367 at 2.8 GHz) |
-| vs vLLM's default here, FP8 Marlin W8A16 (ours: `linear`, quantization included) | 0.99-1.06x: **loses 1% on down at M = 16** | 1.00-2.11x | **1.67-2.03x faster** |
-| vs vLLM Triton block-FP8, shipped default config | 1.07-2.58x faster | 1.02-2.14x faster | 1.08-1.21x faster |
-| vs the same Triton kernel tuned for this GPU | **0.93-1.07x: loses up to 7% on o and qkv** | **0.95-1.04x: loses up to 5% on qkv** | 1.01-1.09x faster |
-| vs cuBLASLt FP8, one scale per tensor (coarser scaling) | 0.95-1.07x: loses up to 5% | **0.83-1.01x: loses up to 17%** | 0.91-0.93x, **loses up to 9%** (except down at M = 8192: 1.27x) |
+| this kernel | 862-933 GB/s of weights (DRAM read peak 957) | 106-316 TFLOPS | 305-330 TFLOPS (MMA peak 367 at 2.8 GHz) |
+| vs vLLM's default here, FP8 Marlin W8A16 (ours: `linear`, quantization included) | 1.00-1.10x: **ties on down at M = 1-16** | 1.03-2.16x | **1.72-2.08x faster** |
+| vs vLLM Triton block-FP8, shipped default config | 1.06-2.61x faster | 1.04-2.22x faster | 1.10-1.21x faster |
+| vs the same Triton kernel tuned for this GPU | 1.00-1.06x | 1.00-1.19x | 1.03-1.09x faster |
+| vs cuBLASLt FP8, one scale per tensor (coarser scaling) | 1.00-1.07x | **0.88-1.04x: loses up to 12%** | 0.91-0.96x, **loses up to 9%** (except down at M = 8192: 1.23x) |
 
 Ratios are baseline time / our time; GEMM only except the Marlin row. The
-tuned Triton config of each shape is the fastest of its five best warm-L2
-candidates re-timed in this cold-L2 harness (that changed 11 of 32 picks;
-the warm pick would have been up to 12% slower, on qkv at M = 64). Against
-the previous recording (commit b3f50b9), cells of unchanged kernels moved by
-up to 4.5% (cuBLASLt on qkv at M = 64; down at M = 64: blockfp8 63.6 -> 61.4
-us, Marlin 63.0 -> 64.4 us, which turned a 5% loss to Marlin into a tie), so
-margins of a few percent are within session-to-session variation. Before
-the 64-column tiles and the fused quantization (commit d5518d7), the middle
-range was 0.79-1.01x of tuned Triton and decode 0.90-1.04x of Marlin.
+plan table and the tuned Triton configs are both tuned on every power of
+two M = 1-8192 in this harness. Against the previous recording (commit
+3660f45), two changes closed the losses to tuned Triton (up to 7% at
+M = 1-16 and 2-5% at M = 64-256) and to Marlin on down: the activation
+scales are now copied into shared memory with each K tile instead of
+being loaded from global memory in the weight stream (o at M = 16: 21.1 ->
+19.5 us), and the plan table is tuned with the benchmark's own harness on a
+finer grid (before, the automatic plan was up to 21% slower than the best
+compiled one; [docs/design.md](docs/design.md), "Where the losses came
+from"). With the weights L2-resident (warm), tuned Triton is still 12% faster
+on qkv at M = 32, and `linear` is 0.81-0.99x of Marlin on o at M = 1-16.
 
-**Batch sizes off the tuning grid** (M = 2, 8, 32, 100, 512, 3000, none of
-which the plan tables or the tuned Triton configs have; cold L2,
-[results/gemm/summary.md](results/gemm/summary.md)): 0.93-2.10x of Marlin,
-**losing 2-7% at M = 32** (down 7%, o 4%, qkv 2%); 0.93-2.36x of default
-Triton, **losing 7% on qkv at M = 512**; 0.86-1.18x of tuned Triton (with the
-config of the nearest tuned M, as vLLM picks it), **losing up to 14%** (o at
-M = 32) and 12% (qkv at M = 512); 0.71-1.04x of cuBLASLt. qkv at M = 512 runs
-the M = 1024 plan entry and takes 110.9 us, twice the 54.7 us of M = 256.
+**Batch sizes off the tuning grid** (M = 3, 12, 24, 48, 100, 384, 768,
+3000, between the powers of two the tables are tuned on; cold L2,
+[results/gemm/summary.md](results/gemm/summary.md)): 1.01-2.23x of Marlin,
+1.07-2.34x of default Triton, 0.99-1.41x of tuned Triton (with the config
+of the nearest tuned M, as vLLM picks it), **losing 1%** on o at M = 48 and
+100 and down at M = 100, and 0.89-1.09x of cuBLASLt. Between two entries
+the kernel takes the tabulated plan of the shape that leaves the least work
+on the busiest SM: the entry above put 1.5 CTAs per SM on down at M = 768
+(319.7 us); the balanced choice runs 3 per SM (248.3 us).
 
 ![speedup](docs/img/speedup.svg)
 
@@ -68,10 +72,15 @@ plugin = blockfp8; median of 5 interleaved runs, one process each;
 
 | | stock | plugin | speedup |
 |---|---|---|---|
-| prefill, prompts of 256 / 1024 / 4096 tokens (tok/s) | 10228 / 10050 / 9460 | 17519 / 17038 / 15461 | 1.71x / 1.70x / 1.63x |
-| decode TPOT, batch 1 / 4 / 16 / 64 (ms) | 10.12 / 10.24 / 10.84 / 14.08 | 9.95 / 10.12 / 10.72 / 12.91 | 1.017x / 1.012x / 1.011x / 1.090x |
+| prefill, prompts of 256 / 1024 / 4096 tokens (tok/s) | 10315 / 10160 / 9551 | 18042 / 17576 / 15801 | 1.75x / 1.73x / 1.65x |
+| decode TPOT, batch 1 / 4 / 16 / 64 (ms) | 10.10 / 10.23 / 10.84 / 14.08 | 9.86 / 10.01 / 10.51 / 12.65 | 1.024x / 1.023x / 1.032x / 1.113x |
 
-**Model quality.** wikitext-2-raw-v1 test perplexity (298,931 tokens in 147
+Recorded at commit 6a2a470; before the scale and plan-table changes
+(commit ec74438) the speedups were 1.63-1.71x for prefill and
+1.011-1.017x / 1.090x for decode.
+
+**Model quality** (recorded at commit 5fab662, before the plan-table
+changes; not re-measured). wikitext-2-raw-v1 test perplexity (298,931 tokens in 147
 windows of 2048, scored with prompt_logprobs; `bench/e2e_vllm.py --ppl`,
 [results/e2e/wikitext2_ppl.json](results/e2e/wikitext2_ppl.json)): stock
 (Marlin, W8A16) **9.7646**, plugin **9.7735** (+0.09%), vLLM's own W8A8
@@ -84,13 +93,14 @@ either does from stock.
 
 **Outputs are not identical to stock**, and are not expected to be: the
 plugin quantizes activations to FP8 (W8A8), Marlin does not (W8A16). Over 24
-chat prompts with greedy decoding (up to 64 tokens), 7-9 of 24 sequences
-match the stock run exactly and 57-60% of tokens come before the first
+chat prompts with greedy decoding (up to 64 tokens), 9 of 24 sequences
+match the stock run exactly and 60% of tokens come before the first
 divergence; teacher-forced on the stock tokens, logprobs differ by a mean of
-0.019 (p99 0.23, max 0.44, 1,449 tokens). vLLM's own W8A8 path is no closer
-to stock (9 of 24 identical, mean 0.019, p99 0.21, max 0.50), and the plugin
-does not match it either (6 of 24, mean 0.023, p99 0.28, max 0.51). Repeated
-stock runs are not fully deterministic (one of four differed on one prompt).
+0.018-0.019 (p99 0.22-0.24, max 0.35-0.44, 1,449 tokens). vLLM's own W8A8
+path is no closer to stock (9 of 24 identical, mean 0.019, p99 0.21, max
+0.50), and the plugin does not match it either (7 of 24, mean 0.023, p99
+0.27-0.28, max 0.51). Repeated stock runs are not fully deterministic (two
+of four differed from the first, on 1 and 5 prompts).
 
 Accuracy equals vLLM's Triton kernel (same instruction, same promotion
 interval): relative Frobenius error 1.669e-3 for both on the down
@@ -106,22 +116,29 @@ vLLM's `per_token_group_quant_fp8`, and the fused GEMM is bitwise equal to
 quantize-then-GEMM (tests).
 
 **Limitations.**
-- Tuned Triton is up to 7% faster at M = 1-16 (o, qkv), 2-4% faster at
-  M = 64 and 5% on qkv at M = 256; cuBLASLt with per-tensor scales is up to 17%
-  faster at M = 64-256; stream-K was not tried.
-- The plan tables only know the tuning grid. Off it, M = 32 loses 2-7% to
-  Marlin and up to 14% to tuned Triton, and qkv at M = 512 is 7% slower
-  than even the default Triton config.
-- Fusing the quantization into the GEMM only partly removes its cost: the
-  fused GEMM is 1.0-5.6 us slower than the plain one, so it wins by at most
-  about 1 us (at the timer's resolution) and only on 6 of the 12 decode
-  shapes; the rest use a separate quantization kernel. Down at M = 16 stays
-  1% behind Marlin.
-- End to end, decode at batch 1-16 gains only 1-2% (the layers are weight
+- cuBLASLt with per-tensor scales (no per-block promotion) is up to 12%
+  faster at M = 64-512 (o at M = 256), 4-9% faster at prefill and up to 11%
+  off the grid (o at M = 768); stream-K or a persistent schedule was not
+  tried.
+- With the weights L2-resident (warm), tuned Triton is 12% faster on qkv at
+  M = 32, and `linear` is 0.81-0.99x of Marlin on o at M = 1-16: the
+  separate quantization kernel (about 2 us) is a quarter of an 8 us GEMM.
+  A decode step of an 8 GB model reads its weights from DRAM (cold), where
+  neither loses.
+- Off the tuning grid, tuned Triton is 1% faster on o at M = 48 and 100 and
+  down at M = 100. The balanced plan choice between entries was written
+  after the M = 384 and 768 cells were probed; on six other batch sizes it
+  sped up three cells by 13-23% and slowed gate_up at M = 320 by 2%.
+- The fused quantization kernel is built and tested but no longer used: it
+  loses to quantize + GEMM on every tuned shape (0.2-5.5 us at M = 1-16),
+  so `linear` always runs the separate kernel. Down at M = 1-16 ties with
+  Marlin (0.998-1.000x).
+- End to end, decode at batch 1-16 gains only 2-3% (the layers are weight
   streams for both kernels), and greedy outputs differ from stock vLLM on
   most prompts, as any W8A8 path does. Quality was checked by wikitext-2
-  perplexity only (+0.09%); no downstream task was evaluated.
-- One GPU (RTX 4090, clocks not lockable, median SM clock 2.78 GHz during
+  perplexity only (+0.09%, measured before these changes); no downstream
+  task was evaluated.
+- One GPU (RTX 4090, clocks not lockable, median SM clock 2.79 GHz during
   the GEMM runs), shapes of one model; the plan tables are specific to both.
 - N must be a multiple of 8 and K of 16; split-K counters assume calls on
   one CUDA stream per device at a time. The plugin relies on a private vLLM
@@ -144,7 +161,8 @@ vLLM leave it out of `VLLM_PLUGINS` (for example
 
 Benchmarks hold the machine-wide GPU lock: `flock /var/tmp/rtx4090.lock
 .venv/bin/python bench/bench_gemm.py` (also `bench/micro/run_micro.py`,
-`bench/autotune.py [--fused]`, `bench/tune_triton.py`, `bench/l2_probe.py`);
+`bench/autotune.py [--fused]`, `bench/tune_triton.py`, `bench/plan_probe.py`,
+`bench/l2_probe.py`);
 `bench/report.py` regenerates the summary and the chart.
 `bench/e2e_vllm.py --runs 5` (and `--ppl`) takes the lock for each run
 itself and `bench/report_e2e.py` summarizes it. `--ppl` reads

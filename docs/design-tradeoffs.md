@@ -68,28 +68,28 @@ Numbers come from `results/` (see the README for how they were measured).
 
 ## 5. Tile shapes per regime
 
-- **Large M (prefill):** 128x64 or 64x128 with 4 warps, 2 stages, two CTAs
-  per SM. A 128x128 tile with 8 warps halves the L2 traffic per FLOP but
-  fits only one CTA per SM and measured 15% slower (docs/design.md,
-  Configurations); L2 bandwidth (4.4 TB/s) was not the limit.
+- **Large M (prefill):** 64x128 with 4 warps, 2 stages, two CTAs per SM
+  (down at M = 512-1024: 128x128 with 8 warps, one CTA per SM). With the
+  activation scales in shared memory the 8-warp 128x128 tile, which halves
+  the L2 traffic per FLOP, is within 0.6-4% of the two-CTA tiles at M = 8192;
+  with the scales as global loads it was 15% slower (docs/design.md,
+  Configurations). L2 bandwidth (4.4 TB/s) was not the limit.
 - **Small and middle M:** 16-64 rows by 64 columns, 3-4 stages, two CTAs per
-  SM, split-K where the column tiles alone do not fill the GPU. With
-  M <= 64 the GEMM is a weight stream: FLOPs per weight byte are at most
-  2 * 64, far below the ~330 FLOP/byte the GPU needs to be compute-bound, so
-  the tile only has to keep enough weight bytes in flight on every SM.
+  SM, split-K only on down. With M <= 64 the GEMM is a weight stream: FLOPs
+  per weight byte are at most 2 * 64, far below the ~330 FLOP/byte the GPU
+  needs to be compute-bound, so the tile only has to keep enough weight
+  bytes in flight on every SM, which 64-96 CTAs of 16x64 already do.
 - **Why 64 columns:** a weight block is 128 columns, so 64-column tiles still
   read one scale per K tile, and they double the CTAs per weight block row.
   With only 128-column tiles the middle range lost up to 21% to tuned Triton
-  (which picks 64-column tiles there); with them it is 0.95-1.04x.
+  (which picks 64-column tiles there); now it is 1.00-1.19x.
 - **Cost of the 16-row tile at M = 1:** 15 of 16 MMA rows are padding. The
-  MMA time is still hidden behind the weight stream (805-935 GB/s against a
+  MMA time is still hidden behind the weight stream (862-933 GB/s against a
   957 GB/s read peak), so swapping the operands to put the weights in the
   MMA's 16-row slot was not needed.
-- **Still missing:** at M = 64 tuned Triton remains 2-4% faster and cuBLASLt
-  (per-tensor scales) up to 17% faster in the middle range; stream-K or a
-  persistent schedule was not tried. The plan table has entries only for
-  M = 1, 4, 16, 64, 256, 1024, 4096, 8192, and between them it can be far
-  off (qkv at M = 512 is 0.93x of default Triton).
+- **Still missing:** cuBLASLt (per-tensor scales, no promotion) is up to 12%
+  faster in the middle range and 4-9% at prefill; stream-K or a persistent
+  schedule was not tried.
 
 ## 6. Deterministic split-K with a "last CTA reduces" counter
 
@@ -105,52 +105,68 @@ Numbers come from `results/` (see the README for how they were measured).
 - **Cost:** a workspace of splits x M x N floats, an int counter per tile in a
   persistent buffer (so two GEMMs on different streams of one device must not
   run concurrently), and wave quantization is only as good as the split count
-  chosen for each shape.
+  chosen for each shape. Since the activation scales moved into shared
+  memory, the tuned table uses split-K only on down (K = 12288) at M <= 128;
+  the decode plans of the other layers stream the weights fastest with one
+  CTA per tile. Stream-K was not built: between tabulated batch sizes a
+  plan with a balanced CTA count per SM recovered the losses measured
+  there (docs/design.md, plan table).
 
 ## 7. Frozen per-shape plan table
 
 - **Chosen:** `bench/autotune.py` times every configuration and split count on
-  the Qwen3-8B shapes; the winners are compiled into `csrc/plan_table.inc`.
-  Other shapes use a simple M-based rule.
+  the Qwen3-8B shapes at every power of two M = 1-8192, with the benchmark's
+  own harness; the winners are compiled into `csrc/plan_table.inc`. Between
+  two entries, `choose_plan` takes the entry above unless another
+  tabulated plan of the shape (M / 4 to 4 M) leaves less work on the busiest
+  SM (M >= 256 only). Other shapes use a simple M-based rule.
 - **Alternatives:** runtime autotuning on first call (start-up cost, timing
-  noise inside a serving process); a closed-form heuristic only.
-- **Cost:** the table is specific to this GPU and these shapes. A second
-  table (`csrc/fused_plan_table.inc`) records the fused-quantization winners
-  and whether each beat the separate quantization kernel + GEMM; only those
-  shapes fuse.
+  noise inside a serving process); a closed-form heuristic only; a finer
+  grid (every batch size vLLM captures in CUDA graphs).
+- **Why the harness matters:** the first table was timed with CUDA events on
+  cold activations at eight batch sizes; against the benchmark it picked
+  plans up to 21% slower than the best one compiled
+  (results/gemm/plan_probe_426750a.json).
+- **Cost:** the table is specific to this GPU and these shapes, and a sweep
+  takes 11 minutes of GPU time. A second table
+  (`csrc/fused_plan_table.inc`) records the fused-quantization winners and
+  whether each beat the separate quantization kernel + GEMM; none does now.
 
 ## 8. Accepting any activation-scale strides
 
 - **Chosen:** the kernel takes the strides of `a_scales`, so vLLM's row-major
   scales and the M-major ones both work without a copy.
-- **Cost:** none measurable; each thread loads 8 scales per K tile, one K
-  tile ahead of use.
+- **Cost:** none measurable. Each tile row's scale is one 4-byte `cp.async`
+  per K tile into shared memory, whatever the strides; as `__ldg` loads one
+  K tile ahead (until commit bed9867) the same scales stalled the weight
+  stream by up to 18% at M = 16 (docs/design.md, where the losses came
+  from).
 
-## 9. Activation quantization fused into the GEMM, for decode only
+## 9. Activation quantization fused into the GEMM: built, not used
 
 - **Chosen:** `gemm_bf16` reads bf16 activations; each thread prefetches its
   16-byte chunks of the next K tile into registers one K tile ahead and
   quantizes them into the e4m3 shared stage at the start of the previous K
   tile, so the K tile's existing barrier publishes them. `linear` fuses only
-  where the plan table measured it faster.
+  where the fused table measured it faster, which is now nowhere.
 - **Alternatives:** (a) a separate quantization kernel before every GEMM
-  (vLLM's way); (b) staging the bf16 tile in a second cp.async ring and
-  quantizing it in shared memory after it lands; (c) quantizing in the
-  previous layer's epilogue (RMSNorm, attention, SiLU-and-mul), which needs
-  control over those kernels.
-- **Why:** (a) costs 1.7-3.2 us per linear at decode (results/gemm/summary.md,
-  "+q" minus GEMM), up to 15% of a decode GEMM; (b) needs a second ring,
-  which costs pipeline stages in the same shared memory, and a second
-  barrier per K tile, so it was replaced by the register prefetch; (c) is
+  (vLLM's way, and now `linear`'s, with blockfp8's own kernel); (b) staging
+  the bf16 tile in a second cp.async ring and quantizing it in shared memory
+  after it lands; (c) quantizing in the previous layer's epilogue (RMSNorm,
+  attention, SiLU-and-mul), which needs control over those kernels.
+- **Why it was built:** (a) costs 0.5-2.2 us per linear at decode with
+  blockfp8's kernel (1.4-3.2 us with vLLM's; results/gemm/summary.md), up
+  to 11% of a decode GEMM; (b) needs a second ring, which costs pipeline
+  stages in the same shared memory, and a second barrier per K tile; (c) is
   outside this kernel.
-- **Cost:** every CTA of a tile row quantizes the same activation rows
-  again. For decode batches that is a few hundred instructions per K tile;
-  from M = 64 on it dominates (3.1x slower than quantize + GEMM for gate_up
-  at M = 256), so those shapes do not fuse. Even at M <= 16 the fused GEMM is
-  1.0-5.6 us slower than the plain GEMM, so fusing beats a separate
-  quantization kernel only by 0.1-1.1 us, on 6 of the 12 decode shapes
-  (results/gemm/autotune_fused.json). The separate launch cost is therefore
-  only partly removed.
+- **Why it is not used:** every CTA of a tile row quantizes the same
+  activation rows again. Once the plain GEMM stopped stalling on its
+  activation-scale loads (commit bed9867), the fused kernel lost on every
+  tuned shape: by 0.2-1.1 us at M = 1-16 on qkv, o and down, 1.6-5.5 us on
+  gate_up, and by up to 358 us at M = 256 (results/gemm/autotune_fused.json).
+  Before that it had won by 0.1-1.1 us on 6 of 12 decode shapes. The kernel
+  stays (tested bitwise equal to quantize-then-GEMM) for shapes where a
+  future sweep finds it faster; untuned shapes do not fuse.
 
 ## 10. A quantization kernel of our own
 
