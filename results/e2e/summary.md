@@ -29,29 +29,49 @@ Each run's figure is the median of 3 repetitions; the tables give the median ove
 
 24 chat prompts, greedy, up to 64 new tokens. Teacher-forced: logprobs of the first stock run's greedy tokens, scored by each run in one prefill (prompt_logprobs).
 
-| run | identical sequences | tokens before first divergence | position-wise match | max abs logprob diff, greedy (up to divergence) | teacher-forced max | teacher-forced median |
-|---|---|---|---|---|---|---|
-| plugin (run1) | 9/24 | 869/1449 (60.0%) | 64.9% | 0.3914 | 0.4435 | 0.00011 |
-| plugin (run2) | 9/24 | 869/1449 (60.0%) | 64.9% | 0.3914 | 0.4435 | 0.00011 |
-| stock (run2) | 24/24 | 1449/1449 (100.0%) | 100.0% | 0.0000 | 0.0000 | 0.00000 |
-| stock (run3) | 24/24 | 1449/1449 (100.0%) | 100.0% | 0.0000 | 0.0000 | 0.00000 |
-| plugin (run3) | 7/24 | 828/1449 (57.1%) | 62.1% | 0.3461 | 0.4435 | 0.00011 |
-| plugin (run4) | 9/24 | 869/1449 (60.0%) | 64.9% | 0.3914 | 0.4435 | 0.00011 |
-| stock (run4) | 24/24 | 1449/1449 (100.0%) | 100.0% | 0.0000 | 0.0000 | 0.00000 |
-| stock (run5) | 23/24 | 1385/1449 (95.6%) | 95.8% | 0.1871 | 0.0000 | 0.00000 |
-| plugin (run5) | 9/24 | 869/1449 (60.0%) | 64.9% | 0.3914 | 0.4435 | 0.00011 |
-| triton (extra) | 9/24 | 1002/1449 (69.2%) | 71.3% | 0.3745 | 0.5000 | 0.00012 |
+| run | identical sequences | tokens before first divergence | position-wise match | max abs logprob diff, greedy (up to divergence) | teacher-forced max | teacher-forced mean | teacher-forced p99 |
+|---|---|---|---|---|---|---|---|
+| plugin (run1) | 9/24 | 869/1449 (60.0%) | 64.9% | 0.3914 | 0.4435 | 0.01851 | 0.2302 |
+| plugin (run2) | 9/24 | 869/1449 (60.0%) | 64.9% | 0.3914 | 0.4435 | 0.01851 | 0.2302 |
+| stock (run2) | 24/24 | 1449/1449 (100.0%) | 100.0% | 0.0000 | 0.0000 | 0.00000 | 0.0000 |
+| stock (run3) | 24/24 | 1449/1449 (100.0%) | 100.0% | 0.0000 | 0.0000 | 0.00000 | 0.0000 |
+| plugin (run3) | 7/24 | 828/1449 (57.1%) | 62.1% | 0.3461 | 0.4435 | 0.01851 | 0.2302 |
+| plugin (run4) | 9/24 | 869/1449 (60.0%) | 64.9% | 0.3914 | 0.4435 | 0.01851 | 0.2302 |
+| stock (run4) | 24/24 | 1449/1449 (100.0%) | 100.0% | 0.0000 | 0.0000 | 0.00000 | 0.0000 |
+| stock (run5) | 23/24 | 1385/1449 (95.6%) | 95.8% | 0.1871 | 0.0000 | 0.00000 | 0.0000 |
+| plugin (run5) | 9/24 | 869/1449 (60.0%) | 64.9% | 0.3914 | 0.4435 | 0.01851 | 0.2302 |
+| triton (extra) | 9/24 | 1002/1449 (69.2%) | 71.3% | 0.3745 | 0.5000 | 0.01853 | 0.2079 |
 
 ## Outputs vs vLLM's own W8A8 path (triton (extra))
 
 One run with Marlin disabled (VLLM_DISABLED_KERNELS); vLLM selected TritonFp8BlockScaledMMKernel. It quantizes activations like the plugin, so it separates the effect of W8A8 from that of the kernel.
 
-| run | identical sequences | tokens before first divergence | position-wise match | max abs logprob diff, greedy (up to divergence) | teacher-forced max | teacher-forced median |
-|---|---|---|---|---|---|---|
-| plugin (run1) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5126 | 0.00021 |
-| plugin (run2) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5126 | 0.00021 |
-| plugin (run3) | 6/24 | 822/1449 (56.7%) | 61.0% | 0.3745 | 0.5126 | 0.00021 |
-| plugin (run4) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5126 | 0.00021 |
-| plugin (run5) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5126 | 0.00021 |
+| run | identical sequences | tokens before first divergence | position-wise match | max abs logprob diff, greedy (up to divergence) | teacher-forced max | teacher-forced mean | teacher-forced p99 |
+|---|---|---|---|---|---|---|---|
+| plugin (run1) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5126 | 0.02290 | 0.2758 |
+| plugin (run2) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5126 | 0.02290 | 0.2758 |
+| plugin (run3) | 6/24 | 822/1449 (56.7%) | 61.0% | 0.3745 | 0.5126 | 0.02290 | 0.2758 |
+| plugin (run4) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5126 | 0.02290 | 0.2758 |
+| plugin (run5) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5126 | 0.02290 | 0.2758 |
 
 Its own speed (one run): prefill L=256: 16624 tok/s, L=1024: 16245 tok/s, L=4096: 14671 tok/s; TPOT B=1: 17.62 ms, B=4: 14.53 ms, B=16: 15.23 ms, B=64: 17.15 ms (vLLM's shipped default Triton config; none is tuned for this GPU).
+
+## wikitext-2 perplexity
+
+Source: results/e2e/wikitext2_ppl.json (bench/e2e_vllm.py --ppl), commit 0a65e1d038. wikitext-2-raw-v1 test (4358 rows, https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/wikitext-2-raw-v1/test-00000-of-00001.parquet, sha256 5f1bea067869...), joined with blank lines: 299078 tokens, 147 non-overlapping windows of 2048, each scored on its own (prompt_logprobs; 298931 scored tokens). Engine: {"gpu_memory_utilization": 0.8, "max_model_len": 8192, "max_num_batched_tokens": 2048, "max_num_seqs": 128, "enable_prefix_caching": false, "seed": 0}.
+
+| run | kernel (vLLM's log) | perplexity | mean NLL |
+|---|---|---|---|
+| stock (ppl1) | MarlinFP8ScaledMMLinearKernel | 9.7646 | 2.27876 |
+| plugin (ppl1) | BlockFp8LinearKernel | 9.7735 | 2.27968 |
+| triton (ppl1) | TritonFp8BlockScaledMMKernel | 9.7739 | 2.27971 |
+| stock (ppl2) | MarlinFP8ScaledMMLinearKernel | 9.7646 | 2.27876 |
+
+Per-token logprob differences over the same scored tokens:
+
+| run | vs | mean abs | p99 abs | p99.9 abs | max abs | mean signed | identical |
+|---|---|---|---|---|---|---|---|
+| plugin (ppl1) | stock (ppl1) | 6.16e-02 | 4.79e-01 | 1.07e+00 | 7.124 | -9.11e-04 | 2.2% |
+| triton (ppl1) | stock (ppl1) | 6.21e-02 | 4.83e-01 | 1.08e+00 | 9.625 | -9.46e-04 | 2.2% |
+| plugin (ppl1) | triton (ppl1) | 7.91e-02 | 6.20e-01 | 1.37e+00 | 8.375 | +3.51e-05 | 2.0% |
+| stock (ppl2) | stock (ppl1) | 0.00e+00 | 0.00e+00 | 0.00e+00 | 0.000 | +0.00e+00 | 100.0% |
