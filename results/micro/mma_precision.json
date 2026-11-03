@@ -1,7 +1,7 @@
 {
- "time_utc": "2026-11-01T22:12:56Z",
+ "time_utc": "2026-11-03T02:28:09Z",
  "git": {
-  "commit": "ba22c421fb3d2bc3613fff8b966de3997aa9425e",
+  "commit": "0a65e1d038453a0368ed1f4106545be4b7279dae",
   "dirty": false,
   "cutlass_commit": "2c85f497547eb441f0fe80bfb0fb2e6f9add1719"
  },
@@ -1636,6 +1636,20 @@
      "p75": 0,
      "min": 0,
      "max": 3.59382e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00134921,
+     "p25": 0.000667474,
+     "p75": 0.00203282,
+     "min": 0,
+     "max": 0.00389105
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00135818,
+     "p25": 0.000673038,
+     "p75": 0.00205293,
+     "min": 0,
+     "max": 1.13333
     }
    },
    {
@@ -1663,6 +1677,20 @@
      "p75": 0,
      "min": 0,
      "max": 3.59382e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00134921,
+     "p25": 0.000667474,
+     "p75": 0.00203282,
+     "min": 0,
+     "max": 0.00389105
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00138739,
+     "p25": 0.000689814,
+     "p75": 0.00215833,
+     "min": 0,
+     "max": 4.33333
     }
    },
    {
@@ -1690,6 +1718,20 @@
      "p75": 0,
      "min": 0,
      "max": 2.4257e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00131891,
+     "p25": 0.000653798,
+     "p75": 0.00201097,
+     "min": 0,
+     "max": 0.00389105
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00134233,
+     "p25": 0.000664665,
+     "p75": 0.00206156,
+     "min": 0,
+     "max": 5.32099
     }
    },
    {
@@ -1717,6 +1759,20 @@
      "p75": 0,
      "min": 0,
      "max": 2.4257e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00131891,
+     "p25": 0.000653798,
+     "p75": 0.00201097,
+     "min": 0,
+     "max": 0.00389105
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00133537,
+     "p25": 0.000662661,
+     "p75": 0.0020485,
+     "min": 0,
+     "max": 5.32099
     }
    },
    {
@@ -1744,6 +1800,20 @@
      "p75": 4.80063e-10,
      "min": 0,
      "max": 1.56684e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00134406,
+     "p25": 0.000669508,
+     "p75": 0.0020274,
+     "min": 0,
+     "max": 0.00388017
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00145334,
+     "p25": 0.00071573,
+     "p75": 0.00229883,
+     "min": 0,
+     "max": 4.59181
     }
    },
    {
@@ -1771,6 +1841,20 @@
      "p75": 4.80063e-10,
      "min": 0,
      "max": 1.56684e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00134406,
+     "p25": 0.000669508,
+     "p75": 0.0020274,
+     "min": 0,
+     "max": 0.00388017
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00136418,
+     "p25": 0.000678825,
+     "p75": 0.00207137,
+     "min": 0,
+     "max": 0.163482
     }
    },
    {
@@ -1798,6 +1882,20 @@
      "p75": 4.80063e-10,
      "min": 0,
      "max": 1.56684e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00134406,
+     "p25": 0.000669508,
+     "p75": 0.0020274,
+     "min": 0,
+     "max": 0.00388017
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00138881,
+     "p25": 0.00068908,
+     "p75": 0.00213365,
+     "min": 0,
+     "max": 0.292801
     }
    },
    {
@@ -1825,6 +1923,20 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00172507,
+     "p25": 0.000838417,
+     "p75": 0.0029637,
+     "min": 4.11814e-07,
+     "max": 6.33648
     }
    },
    {
@@ -1852,6 +1964,20 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00138396,
+     "p25": 0.000693088,
+     "p75": 0.00206486,
+     "min": 4.11814e-07,
+     "max": 0.299845
     }
    },
    {
@@ -1879,6 +2005,20 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00139468,
+     "p25": 0.000697915,
+     "p75": 0.0020949,
+     "min": 4.11814e-07,
+     "max": 0.445894
     }
    },
    {
@@ -1906,6 +2046,20 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00141231,
+     "p25": 0.000708202,
+     "p75": 0.00214018,
+     "min": 4.11814e-07,
+     "max": 0.725781
     }
    },
    {
@@ -1933,6 +2087,20 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00144084,
+     "p25": 0.000717426,
+     "p75": 0.00221149,
+     "min": 4.11814e-07,
+     "max": 1.55671
     }
    },
    {
@@ -1960,6 +2128,20 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.0015539,
+     "p25": 0.000765314,
+     "p75": 0.00249231,
+     "min": 4.11814e-07,
+     "max": 3.41946
     }
    },
    {
@@ -1987,6 +2169,20 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00146724,
+     "p25": 0.000731398,
+     "p75": 0.00227709,
+     "min": 4.11814e-07,
+     "max": 1.57498
     }
    },
    {
@@ -2014,6 +2210,20 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.00156081,
+     "p25": 0.000771804,
+     "p75": 0.00249877,
+     "min": 4.11814e-07,
+     "max": 2.79854
     }
    },
    {
@@ -2041,47 +2251,57 @@
      "p75": 1.45845e-09,
      "min": 0,
      "max": 2.15016e-08
+    },
+    "bf16_rounded_exact_err_over_abs_exact": {
+     "median": 0.00136667,
+     "p25": 0.000684837,
+     "p75": 0.0020238,
+     "min": 4.11814e-07,
+     "max": 0.00385791
+    },
+    "bf16_rounded_result_err_over_abs_exact": {
+     "median": 0.002639,
+     "p25": 0.00123605,
+     "p75": 0.00504322,
+     "min": 5.94952e-07,
+     "max": 9.60885
     }
    }
   ]
  },
  "gpu_before": {
-  "timestamp": "2026/11/01 14:12:56.598",
+  "timestamp": "2026/11/02 18:28:10.064",
   "name": "NVIDIA GeForce RTX 4090",
   "driver_version": "595.99.02",
-  "pstate": "P2",
-  "clocks.sm": "2805 MHz",
+  "pstate": "P0",
+  "clocks.sm": "2775 MHz",
   "clocks.mem": "10501 MHz",
   "clocks.max.sm": "3105 MHz",
-  "temperature.gpu": "36",
-  "power.draw": "135.14 W",
+  "temperature.gpu": "65",
+  "power.draw": "97.57 W",
   "power.limit": "450.00 W",
-  "utilization.gpu": "100 %",
-  "memory.used": "662 MiB",
+  "utilization.gpu": "31 %",
+  "memory.used": "303 MiB",
   "memory.total": "24564 MiB",
   "clocks_event_reasons.active": "0x0000000000000000",
-  "compute_apps": [
-   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 165 MiB"
-  ]
+  "compute_apps": []
  },
  "gpu_after": {
-  "timestamp": "2026/11/01 14:13:00.231",
+  "timestamp": "2026/11/02 18:28:13.761",
   "name": "NVIDIA GeForce RTX 4090",
   "driver_version": "595.99.02",
-  "pstate": "P2",
+  "pstate": "P0",
   "clocks.sm": "2520 MHz",
-  "clocks.mem": "10251 MHz",
+  "clocks.mem": "10501 MHz",
   "clocks.max.sm": "3105 MHz",
-  "temperature.gpu": "34",
-  "power.draw": "47.09 W",
+  "temperature.gpu": "62",
+  "power.draw": "67.85 W",
   "power.limit": "450.00 W",
-  "utilization.gpu": "0 %",
-  "memory.used": "662 MiB",
+  "utilization.gpu": "13 %",
+  "memory.used": "303 MiB",
   "memory.total": "24564 MiB",
   "clocks_event_reasons.active": "0x0000000000000000",
-  "compute_apps": [
-   "1951965, /opt/google/chrome/chrome --type=gpu-process --gpu-recent-crash-count=0 --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=1951926 --enable-crash-reporter=886d240b-a185-4240-9432-1db2cef94e54? --change-stack-guard-on-fork=enable --gpu-preferences=YAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAASAAAAAAAAAABAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAQAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --metrics-shmem-handle=4?i?3005739583979872737?11032471760737545951?262144 --field-trial-handle=3?i?3213359972210005036?3334461970449488570?262144 --enable-features=GlicHorizontalTabToolbarButton --variations-seed-version=20261030-090037.398000-production --pseudonymization-salt-handle=7?i?15516853701538085828?2985911167647596185?4 --trace-process-track-uuid=3190708988185955192, 165 MiB"
-  ]
+  "compute_apps": []
  },
  "summary": {
   "f32acc": {
