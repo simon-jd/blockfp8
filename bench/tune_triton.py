@@ -29,7 +29,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import gpu_state  # noqa: E402
 
 import blockfp8  # noqa: E402
-from bench_gemm import LAYERS, M_VALUES, calls_per_run, time_calls  # noqa: E402
+from autotune import TUNE_M  # noqa: E402
+from bench_gemm import LAYERS, calls_per_run, time_calls  # noqa: E402
 
 TOP = 5  # warm-L2 candidates re-timed in the cold harness
 COLD_RUNS = 10
@@ -72,7 +73,7 @@ def main():
         g = torch.Generator(device="cuda").manual_seed(0)
         b, sb = blockfp8.quantize_weights(torch.randn(n, k, generator=g, device="cuda") * 0.02)
         best, retimed = {}, {}
-        for m in M_VALUES:
+        for m in TUNE_M:
             a, sa = blockfp8.quantize_activations(torch.randn(m, k, generator=g, device="cuda"),
                                                   column_major_scales=False)
             c = torch.empty(m, n, dtype=torch.bfloat16, device="cuda")
