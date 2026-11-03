@@ -8,6 +8,12 @@
 //     partial accumulator;
 //   * after each K tile (= one scale block) the partial is promoted on the
 //     CUDA cores: acc += partial * (sa[m, kb] * sb[n / 128, kb]).
+// A K tile's activation scales travel with it: one 4-byte cp.async per tile
+// row into a per-stage slot in shared memory, in the tile's own cp.async
+// group, so the promotion reads them from shared memory. (Loading them from
+// global memory one K tile ahead, as before, stalled the weight stream: at
+// M = 16 a call took as long as with 4x the weight bytes would at M = 4.)
+// The weight scale is one float per K tile and stays a register prefetch.
 // With split-K, every CTA of a tile writes its FP32 partial tile to a
 // workspace; the last CTA to arrive (an atomic counter decides who that is)
 // sums all partials in split order, so the result is bitwise deterministic.
@@ -83,15 +89,24 @@ struct Config {
       Layout<Shape<_1, _16>>{}));
   using S2R = Copy_Atom<SM75_U32x4_LDSM_N, T>;
 
+  // The tiles, then one float activation scale per row and stage (copied
+  // from global memory, or written by the fused quantizer).
+  static_assert(kThreads >= BM, "one thread per tile row copies the row's scale");
   static constexpr int kSmemBytes =
-      int((cosize_v<SmemLayoutA> + cosize_v<SmemLayoutB>) * sizeof(T));
+      int((cosize_v<SmemLayoutA> + cosize_v<SmemLayoutB>) * sizeof(T)) +
+      Stages * BM * int(sizeof(float));
 
-  // Fused quantization: bf16 activations, 16-byte chunks per tile row, and
-  // one float scale per row and stage in shared memory after the tiles.
+  // Fused quantization: bf16 activations, 16-byte chunks per tile row.
   using TX = cutlass::bfloat16_t;
   static constexpr int kXChunks = BK / 8;
-  static constexpr int kSmemBytesFused = kSmemBytes + Stages * BM * int(sizeof(float));
 };
+
+// 4-byte cp.async (zero fill when !pred): one activation scale into shared memory.
+__device__ __forceinline__ void cp_async_f32(float* smem, const float* gmem, bool pred) {
+  asm volatile("cp.async.ca.shared.global [%0], [%1], 4, %2;\n" ::"r"(
+                   static_cast<uint32_t>(__cvta_generic_to_shared(smem))),
+               "l"(gmem), "r"(pred ? 4 : 0));
+}
 
 template <class Cfg, bool kSplitK, bool kFuseQuant = false>
 __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(KernelParams kp) {
@@ -168,6 +183,13 @@ __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(Ker
           bool pred = get<0>(tAcA(0, i, j)) < m_rem && get<1>(tAcA(0, i, j)) < k_rem;
           copy(g2s.with(pred), tAgA(_, i, j, kt), tAsA(_, i, j, stage));
         }
+      }
+      // The tile's activation scales, one per row (zero past M).
+      if (threadIdx.x < BM) {
+        const int r = threadIdx.x;
+        const bool ok = r < m_rem;
+        cp_async_f32(smem_scale + stage * BM + r,
+                     p.sa + (ok ? int64_t(m0 + r) * p.sa_m + int64_t(kt) * p.sa_k : 0), ok);
       }
     }
     CUTE_UNROLL
@@ -259,27 +281,24 @@ __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(Ker
     CUTE_UNROLL
     for (int h = 0; h < 2; ++h) {
       int r = get<0>(tCcC(2 * h, m, 0));
-      // Fused: the row within the tile, whose scale the quantizer leaves in shared memory.
-      sa_off[h][m] = r >= m_rem ? -1 : kFuseQuant ? r : int((m0 + r) * p.sa_m);
+      sa_off[h][m] = r >= m_rem ? -1 : r;  // the row's slot in a stage's scales
     }
   }
   const float* sb_col = p.sb + (n0 / 128) * p.sb_n;
-  auto load_scales = [&](int kt, int stage, float (&s)[2][kMmaM]) {
-    const float sb = __ldg(sb_col + kt * p.sb_k);
-    const float* sa = kFuseQuant ? smem_scale + stage * BM : p.sa + kt * p.sa_k;
+  auto load_sb = [&](int kt) { return __ldg(sb_col + kt * p.sb_k); };
+  // A K tile's combined scales: the activation scales in its stage (copied
+  // with the tile, or written by the quantizer) times the weight scale sb.
+  auto load_scales = [&](int stage, float sb, float (&s)[2][kMmaM]) {
+    const float* sa = smem_scale + stage * BM;
     CUTE_UNROLL
     for (int m = 0; m < kMmaM; ++m) {
       CUTE_UNROLL
-      for (int h = 0; h < 2; ++h) {
-        if constexpr (kFuseQuant)
-          s[h][m] = sa_off[h][m] >= 0 ? sa[sa_off[h][m]] * sb : 0.f;
-        else
-          s[h][m] = sa_off[h][m] >= 0 ? __ldg(sa + sa_off[h][m]) * sb : 0.f;
-      }
+      for (int h = 0; h < 2; ++h) s[h][m] = sa_off[h][m] >= 0 ? sa[sa_off[h][m]] * sb : 0.f;
     }
   };
 
   // ---- prologue: fill Stages - 1 shared stages
+  float sb_next = kt_begin < kt_end ? load_sb(kt_begin) : 0.f;
   int kt_load = kt_begin;
   if constexpr (kFuseQuant) {
     if (kt_begin < kt_end) load_x(kt_begin);
@@ -303,17 +322,16 @@ __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(Ker
   copy(typename Cfg::S2R{}, tXsB_p(_, _, Int<0>{}), tXrB(_, _, Int<0>{}));
 
   // ---- main loop: one iteration per 128-wide K tile (one scale block).
-  // Scales are loaded one tile ahead so their latency is never exposed.
+  // A tile's scales are read from its stage as soon as the stage is published
+  // (the barrier before its first MMAs) and used at the end of the tile; the
+  // weight scale is fetched one tile ahead.
   float scale[2][kMmaM], scale_next[2][kMmaM];
-  // Fused: the scales of a tile come from shared memory once its stage is published.
-  if (kt_begin < kt_end) load_scales(kt_begin, 0, scale_next);
+  if (kt_begin < kt_end) load_scales(0, sb_next, scale_next);
   CUTE_NO_UNROLL
   for (int kt = kt_begin; kt < kt_end; ++kt) {
     CUTE_UNROLL
     for (int m = 0; m < kMmaM; ++m) scale[0][m] = scale_next[0][m], scale[1][m] = scale_next[1][m];
-    if constexpr (!kFuseQuant) {
-      if (kt + 1 < kt_end) load_scales(kt + 1, 0, scale_next);
-    }
+    if (kt + 1 < kt_end) sb_next = load_sb(kt + 1);
 
     CUTE_UNROLL
     for (int kb = 0; kb < kBlocks; ++kb) {
@@ -322,9 +340,7 @@ __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(Ker
         tXsB_p = tXsB(_, _, _, smem_read);
         cp_async_wait<kStages - 2>();
         __syncthreads();
-        if constexpr (kFuseQuant) {
-          if (kt + 1 < kt_end) load_scales(kt + 1, smem_read, scale_next);
-        }
+        if (kt + 1 < kt_end) load_scales(smem_read, sb_next, scale_next);
       }
       const int kb_next = (kb + 1) % kBlocks;
       copy(typename Cfg::S2R{}, tXsA_p(_, _, kb_next), tXrA(_, _, kb_next));
@@ -401,7 +417,9 @@ __global__ void __launch_bounds__(Cfg::kThreads, Cfg::MinBlocks) gemm_kernel(Ker
         }
     __threadfence();
     __syncthreads();
-    __shared__ int is_last;
+    // The flag lives in the (now unused) tile memory: no static shared memory,
+    // so two CTAs of the 100 KB-per-SM configurations still fit on an SM.
+    int& is_last = *reinterpret_cast<int*>(smem_raw);
     if (threadIdx.x == 0) is_last = atomicAdd(kp.counters + tile, 1) == kp.splits - 1;
     __syncthreads();
     if (!is_last) return;

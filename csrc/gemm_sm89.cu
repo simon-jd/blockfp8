@@ -27,7 +27,7 @@ void check_cuda(cudaError_t e, const char* what) {
 template <class Cfg, bool kSplitK, bool kFuse>
 void launch_cfg(const KernelParams& kp, dim3 grid, cudaStream_t stream) {
   auto kernel = gemm_kernel<Cfg, kSplitK, kFuse>;
-  constexpr int smem = kFuse ? Cfg::kSmemBytesFused : Cfg::kSmemBytes;
+  constexpr int smem = Cfg::kSmemBytes;
   // The shared-memory limit is a per-device attribute of the kernel: set it on
   // the first launch on each device (bit d of done; devices >= 64 every time).
   static std::atomic<uint64_t> done{0};
@@ -37,6 +37,15 @@ void launch_cfg(const KernelParams& kp, dim3 grid, cudaStream_t stream) {
   if (!(done.load(std::memory_order_acquire) & bit) || !bit) {
     check_cuda(cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem),
                "cudaFuncSetAttribute(MaxDynamicSharedMemorySize)");
+    // The plans were tuned with MinBlocks resident CTAs per SM; fail loudly if
+    // the compiled kernel (registers, shared memory) cannot have them.
+    int resident = 0;
+    check_cuda(
+        cudaOccupancyMaxActiveBlocksPerMultiprocessor(&resident, kernel, Cfg::kThreads, smem),
+        "cudaOccupancyMaxActiveBlocksPerMultiprocessor");
+    if (resident < Cfg::MinBlocks)
+      throw std::runtime_error(
+          "blockfp8: a kernel configuration fits fewer CTAs per SM than it is built for");
     done.fetch_or(bit, std::memory_order_release);
   }
   kernel<<<grid, Cfg::kThreads, smem, stream>>>(kp);
@@ -52,10 +61,11 @@ void launch_any(const KernelParams& kp, dim3 grid, cudaStream_t stream) {
 
 template <class Cfg, bool kFuse = false>
 constexpr ConfigEntry entry(const char* name) {
-  static_assert((kFuse ? Cfg::kSmemBytesFused : Cfg::kSmemBytes) <= 99 * 1024,
-                "more shared memory than one sm_89 CTA can have");
-  return {name, Cfg::BM, Cfg::BN, Cfg::kThreads,
-          kFuse ? Cfg::kSmemBytesFused : Cfg::kSmemBytes, &launch_any<Cfg, kFuse>};
+  static_assert(Cfg::kSmemBytes <= 99 * 1024, "more shared memory than one sm_89 CTA can have");
+  // 100 KB of shared memory per SM, 1 KB of it reserved per resident CTA.
+  static_assert(Cfg::MinBlocks * (Cfg::kSmemBytes + 1024) <= 100 * 1024,
+                "the CTAs per SM __launch_bounds__ asks for do not fit in shared memory");
+  return {name, Cfg::BM, Cfg::BN, Cfg::kThreads, Cfg::kSmemBytes, &launch_any<Cfg, kFuse>};
 }
 
 //                     BM   BN  stages warps(M x N)
