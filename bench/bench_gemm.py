@@ -36,8 +36,8 @@ order; the result is the median over >= 10 such interleaved runs, with the IQR.
 Run it holding the GPU lock:
     flock /var/tmp/rtx4090.lock .venv/bin/python bench/bench_gemm.py
 Batch sizes outside the tuning grid (plan tables and Triton configs tuned on
-M_VALUES; held out):
-    flock /var/tmp/rtx4090.lock .venv/bin/python bench/bench_gemm.py --m 2 8 32 100 512 3000 \
+the powers of two; OFFGRID_M is held out):
+    flock /var/tmp/rtx4090.lock .venv/bin/python bench/bench_gemm.py --offgrid \
         --out results/gemm/qwen3_8b_offgrid.json
 """
 
@@ -64,7 +64,10 @@ LAYERS = {
     "gate_up": (24576, 4096),
     "down": (4096, 12288),
 }
-M_VALUES = [1, 4, 16, 64, 256, 1024, 4096, 8192]
+M_VALUES = [1, 4, 16, 32, 64, 256, 512, 1024, 4096, 8192]
+# Batch sizes between the powers of two the plan tables and the tuned Triton
+# configs are tuned on (autotune.TUNE_M); never tuned on.
+OFFGRID_M = [3, 12, 24, 48, 100, 384, 768, 3000]
 IMPLS = ["blockfp8", "blockfp8+quant", "blockfp8_fused", "blockfp8_linear", "vllm_group_quant",
          "vllm_triton",
          "vllm_triton+quant", "vllm_triton_tuned", "vllm_marlin_fp8", "cublaslt_fp8", "cublas_bf16"]
@@ -368,10 +371,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--layers", nargs="*", default=list(LAYERS))
     ap.add_argument("--m", nargs="*", type=int, default=M_VALUES)
+    ap.add_argument("--offgrid", action="store_true", help="time OFFGRID_M instead of --m")
     ap.add_argument("--runs", type=int, default=10)
     ap.add_argument("--impls", nargs="*", default=None)
     ap.add_argument("--out", default=os.path.join(gpu_state.REPO, "results", "gemm", "qwen3_8b.json"))
     args = ap.parse_args()
+    if args.offgrid:
+        args.m = OFFGRID_M
     if args.runs < 10:
         print("note: fewer than 10 runs; not a reportable measurement", flush=True)
     if not gpu_state.holds_gpu_lock():

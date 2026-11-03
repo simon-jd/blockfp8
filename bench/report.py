@@ -93,8 +93,8 @@ def offgrid(path):
     out = ["\n## Batch sizes outside the tuning grid (cold L2)\n",
            f"Source: results/gemm/qwen3_8b_offgrid.json, commit {g['git']['commit'][:10]}"
            f"{' (dirty)' if g['git']['dirty'] else ''}, {g['time_utc']}, {g['runs']} interleaved runs."
-           " The plan tables and the tuned Triton configs only have M = "
-           "1, 4, 16, 64, 256, 1024, 4096, 8192: blockfp8 takes the entry with the smallest "
+           " The plan tables and the tuned Triton configs are tuned on the powers of two "
+           "1-8192 only; these M lie between them: blockfp8 takes the entry with the smallest "
            "tabulated M >= M, tuned Triton the nearest tabulated M (vLLM's rule; Triton M column).",
            "Ratios are baseline time / blockfp8 time (Marlin: / blockfp8.linear time).\n",
            "| layer | M | blockfp8 us | linear us (runs) | vs Triton | vs Triton tuned (M) |"
