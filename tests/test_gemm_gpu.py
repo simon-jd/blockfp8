@@ -118,10 +118,15 @@ def test_exact_integer_case_split_k(config, splits):
     assert torch.equal(c, reference_gemm(a, sa, b, sb).to(torch.bfloat16))
 
 
-@pytest.mark.parametrize("shape", SHAPES + [(1, 4096, 4096), (64, 6144, 4096), (512, 4096, 12288)])
+# (384, 4096, 12288) and (768, 6144, 4096) lie between tabulated M, where
+# choose_plan may take the plan of another entry (balanced_entry).
+@pytest.mark.parametrize("shape", SHAPES + [(1, 4096, 4096), (64, 6144, 4096), (512, 4096, 12288),
+                                   (384, 4096, 12288), (768, 6144, 4096)])
 def test_realistic_within_bound_auto_plan(shape):
     a, sa, b, sb = realistic_operands(*shape)
-    check_bounded(blockfp8.gemm(a, sa, b, sb), a, sa, b, sb)
+    c = blockfp8.gemm(a, sa, b, sb)
+    check_bounded(c, a, sa, b, sb)
+    assert torch.equal(c, blockfp8.gemm(a, sa, b, sb))  # same plan, same bits
 
 
 @pytest.mark.parametrize("col_major", [True, False])

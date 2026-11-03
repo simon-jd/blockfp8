@@ -187,11 +187,49 @@ Plan heuristic_plan(int M, int N, int K, int num_sms, bool fused) {
   return {config, splits, fused};
 }
 
+// Work of the busiest SM under a plan: ceil(CTAs / SMs) CTAs of BM x BN x
+// (K tiles per split), padding included.
+int64_t busiest_sm_work(const TableEntry& t, int M, int N, int K, int num_sms) {
+  const ConfigEntry& e = kConfigs[t.config];
+  const int k_tiles = cdiv(K, 128);
+  const int per_split = cdiv(k_tiles, std::max(1, std::min(t.splits, k_tiles)));
+  const int64_t ctas = int64_t(cdiv(M, e.bm)) * cdiv(N, e.bn) * cdiv(k_tiles, per_split);
+  return (ctas + num_sms - 1) / num_sms * e.bm * e.bn * per_split;
+}
+
+// A compute-bound M between two tabulated ones: the entry above can load
+// the SMs unevenly (down at M = 768 ran the M = 1024 plan, 192 CTAs of
+// 128x128 on 128 SMs, so half the SMs ran two and half one). Among the
+// plans tabulated for this shape at M / 4 .. 4 M with tiles of 64 rows or
+// more, take the one whose busiest SM does the least work; on a tie keep
+// the entry above, else the entry nearest in M.
+const TableEntry* balanced_entry(const TableEntry* above, int M, int N, int K, int num_sms) {
+  if (M < 256 || above->m == M) return above;
+  const TableEntry* best = above;
+  int64_t best_work = busiest_sm_work(*above, M, N, K, num_sms);
+  double best_dist = 0;
+  for (int i = 0; i < entries(kPlanTable); ++i) {
+    const TableEntry& t = kPlanTable[i];
+    if (t.n != N || t.k != K || t.config >= kNumConfigs || kConfigs[t.config].bm < 64) continue;
+    if (4 * int64_t(t.m) < M || t.m > 4 * int64_t(M)) continue;
+    const int64_t work = busiest_sm_work(t, M, N, K, num_sms);
+    const double dist = std::max(double(t.m) / M, double(M) / t.m);
+    if (work < best_work || (work == best_work && best != above && dist < best_dist)) {
+      best = &t;
+      best_work = work;
+      best_dist = dist;
+    }
+  }
+  return best;
+}
+
 }  // namespace
 
 Plan choose_plan(int M, int N, int K, int num_sms) {
-  if (const TableEntry* t = lookup(kPlanTable, entries(kPlanTable), kNumConfigs, M, N, K))
+  if (const TableEntry* t = lookup(kPlanTable, entries(kPlanTable), kNumConfigs, M, N, K)) {
+    t = balanced_entry(t, M, N, K, num_sms);
     return {t->config, t->splits, false};
+  }
   return heuristic_plan(M, N, K, num_sms, false);
 }
 
