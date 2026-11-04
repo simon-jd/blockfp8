@@ -72,10 +72,12 @@ plugin = blockfp8; median of 5 interleaved runs, one process each;
 
 | | stock | plugin | speedup |
 |---|---|---|---|
-| prefill, prompts of 256 / 1024 / 4096 tokens (tok/s) | 10315 / 10160 / 9551 | 18042 / 17576 / 15801 | 1.75x / 1.73x / 1.65x |
-| decode TPOT, batch 1 / 4 / 16 / 64 (ms) | 10.10 / 10.23 / 10.84 / 14.08 | 9.86 / 10.01 / 10.51 / 12.65 | 1.024x / 1.023x / 1.032x / 1.113x |
+| prefill, prompts of 256 / 1024 / 4096 tokens (tok/s) | 10372 / 10211 / 9591 | 18164 / 17778 / 15931 | 1.75x / 1.74x / 1.66x |
+| decode TPOT, batch 1 / 4 / 16 / 64 (ms) | 10.10 / 10.23 / 10.84 / 14.07 | 9.87 / 10.02 / 10.45 / 12.64 | 1.024x / 1.021x / 1.037x / 1.113x |
 
-Recorded at commit 6a2a470; before the scale and plan-table changes
+Recorded at commit 607348f, which has the balanced plan choice (the
+previous recording, at 6a2a470, predates it: 1.65-1.75x prefill,
+1.023-1.032x / 1.113x decode); before the scale and plan-table changes
 (commit ec74438) the speedups were 1.63-1.71x for prefill and
 1.011-1.017x / 1.090x for decode.
 
@@ -100,14 +102,14 @@ than either does from stock. The two plugin runs agree exactly on 298,862 of
 
 **Outputs are not identical to stock**, and are not expected to be: the
 plugin quantizes activations to FP8 (W8A8), Marlin does not (W8A16). Over 24
-chat prompts with greedy decoding (up to 64 tokens), 9 of 24 sequences
-match the stock run exactly and 60% of tokens come before the first
+chat prompts with greedy decoding (up to 64 tokens), 10 of 24 sequences
+match the stock run exactly and 61.7% of tokens come before the first
 divergence; teacher-forced on the stock tokens, logprobs differ by a mean of
-0.018-0.019 (p99 0.22-0.24, max 0.35-0.44, 1,449 tokens). vLLM's own W8A8
-path is no closer to stock (9 of 24 identical, mean 0.019, p99 0.21, max
-0.50), and the plugin does not match it either (7 of 24, mean 0.023, p99
-0.27-0.28, max 0.51). Repeated stock runs are not fully deterministic (two
-of four differed from the first, on 1 and 5 prompts).
+0.018-0.019 (p99 0.22-0.24, max 0.35-0.44, 1,450 tokens). vLLM's own W8A8
+path is about as close to stock (10 of 24 identical, mean 0.018, p99 0.19,
+max 0.50), and the plugin does not match it either (6 of 24, mean 0.022, p99
+0.26-0.28, max 0.57). Repeated stock runs are not deterministic (each of
+four differed from the first, on 2 to 8 prompts).
 
 Accuracy equals vLLM's Triton kernel (same instruction, same promotion
 interval): relative Frobenius error 1.669e-3 for both on the down
@@ -140,7 +142,7 @@ quantize-then-GEMM (tests).
   loses to quantize + GEMM on every tuned shape (0.2-5.5 us at M = 1-16),
   so `linear` always runs the separate kernel. Down at M = 1-16 ties with
   Marlin (0.998-1.000x).
-- End to end, decode at batch 1-16 gains only 2-3% (the layers are weight
+- End to end, decode at batch 1-16 gains only 2-4% (the layers are weight
   streams for both kernels), and greedy outputs differ from stock vLLM on
   most prompts, as any W8A8 path does. Quality was checked by wikitext-2
   perplexity only (+0.09%, measured at 2af08cb); no downstream

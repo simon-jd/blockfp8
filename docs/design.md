@@ -344,25 +344,25 @@ a fresh process per run under the GPU lock, five interleaved runs per
 configuration, `gpu_memory_utilization` 0.80, prefix caching off, and reads
 vLLM's log to confirm which kernel it selected in every run.
 
-Recorded at commit 6a2a470 (retuned tables, scales in shared memory):
+Recorded at commit 607348f (retuned tables, scales in shared memory,
+balanced plan choice between entries):
 
 | | stock (Marlin W8A16) | plugin (blockfp8 W8A8) | speedup |
 |---|---|---|---|
-| prefill, 64 x 256 tokens | 10315 tok/s | 18042 tok/s | 1.75x |
-| prefill, 16 x 1024 tokens | 10160 tok/s | 17576 tok/s | 1.73x |
-| prefill, 4 x 4096 tokens | 9551 tok/s | 15801 tok/s | 1.65x |
-| decode TPOT, batch 1 | 10.10 ms | 9.86 ms | 1.024x |
-| decode TPOT, batch 4 | 10.23 ms | 10.01 ms | 1.023x |
-| decode TPOT, batch 16 | 10.84 ms | 10.51 ms | 1.032x |
-| decode TPOT, batch 64 | 14.08 ms | 12.65 ms | 1.113x |
+| prefill, 64 x 256 tokens | 10372 tok/s | 18164 tok/s | 1.75x |
+| prefill, 16 x 1024 tokens | 10211 tok/s | 17778 tok/s | 1.74x |
+| prefill, 4 x 4096 tokens | 9591 tok/s | 15931 tok/s | 1.66x |
+| decode TPOT, batch 1 | 10.10 ms | 9.87 ms | 1.024x |
+| decode TPOT, batch 4 | 10.23 ms | 10.02 ms | 1.021x |
+| decode TPOT, batch 16 | 10.84 ms | 10.45 ms | 1.037x |
+| decode TPOT, batch 64 | 14.07 ms | 12.64 ms | 1.113x |
 
-Before (commit ec74438, the plan table of that time): prefill 1.63-1.71x,
-TPOT 1.011-1.017x at batch 1-16 and 1.090x at 64. Every GEMM these runs time
-has a tabulated M (decode 1, 4, 16, 64; prefill chunks of 8192 tokens; TPOT
-prompt batches of 128-8192 tokens), so the later balanced choice between
-entries (commit 667fc95) does not change their plans. Prefill gains less
+Earlier recordings (results/README.md): at ec74438, with the plan table of
+that time, prefill 1.63-1.71x and TPOT 1.011-1.017x at batch 1-16 and
+1.090x at 64; at 6a2a470, before the balanced choice, prefill 1.65-1.75x and
+TPOT 1.023-1.032x and 1.113x. Prefill gains less
 than the GEMMs alone (1.72-2.08x) because attention, norms and sampling do
-not change; decode at batch 1-16 gains 2-3%, in line with the GEMM-level
+not change; decode at batch 1-16 gains 2-4%, in line with the GEMM-level
 1.00-1.10x against Marlin (the linear layers are a weight stream either
 way), and batch 64 gains 11%, where `linear` is 1.03-1.23x faster than
 Marlin.
@@ -382,28 +382,27 @@ per-token logprob differences against stock are the same for both W8A8
 kernels (mean 0.062, p99 0.48, mean signed -9e-4 for the plugin and -9.5e-4
 for Triton), and between the two kernels larger (mean 0.079, p99 0.62): they
 disagree token by token as much as each does with stock, but cost the same
-perplexity. The two plugin runs agree exactly on 298,862 of 298,931 token
-logprobs; the other 69 differ by at most 0.79.
-
-**Outputs** (recorded at 6a2a470; the 24-prompt prefill has an untabulated
-M, so the later balanced choice may change its plan). They are not the
+perplexity. T**Outputs** (recorded at 607348f, with the Triton run at 91d7c06, which
+only adds results). They are not the
 same, and they are not expected to be: the plugin quantizes activations to
 e4m3 (W8A8, the scheme the checkpoint was made for), Marlin keeps them in
 bf16 (W8A16). Over 24 chat prompts with greedy decoding (up to 64 tokens),
-9 sequences are identical to the first stock run in every plugin run, and
-59.5-60.0% of the tokens come before the first divergence. Teacher-forced
-on the stock run's tokens, the logprobs of the same 1,449 tokens differ by
+10 sequences are identical to the first stock run in every plugin run, and
+61.7% of the tokens come before the first divergence. Teacher-forced
+on the stock run's tokens, the logprobs of the same 1,450 tokens differ by
 a mean of 0.018-0.019 (p99 0.22-0.24, max 0.35-0.44). vLLM's own W8A8 path
-(its Triton block kernel, Marlin disabled, one run) is no closer to stock:
-9 of 24 identical, 69% before divergence, teacher-forced mean 0.019, p99
-0.21, max 0.50. The plugin and that Triton path also differ from each
-other (7 of 24 identical, teacher-forced mean 0.023, p99 0.27-0.28, max
-0.51). Both quantize activations per 1x128 group, but the Triton path does
+(its Triton block kernel, Marlin disabled, one run) is about as close to
+stock: 10 of 24 identical, 65.2% before divergence, teacher-forced mean
+0.018, p99 0.19, max 0.50. The plugin and that Triton path differ from each
+other more (6 of 24 identical, teacher-forced mean 0.022, p99 0.26-0.28,
+max 0.57). Both quantize activations per 1x128 group, but the Triton path does
 it with vLLM's QuantFP8 op inside the compiled graph and the plugin with
 blockfp8's kernels, and the GEMM-level tests establish equal accumulation
 error, not bitwise-equal results; these runs do not show which difference
-dominates. vLLM itself is not run-to-run deterministic here either: of the
-four repeated stock runs, two matched the first on every prompt and two
-did not (23 and 19 of 24 identical); all five plugin runs have the same 9
-identical sequences, but one diverges from stock earlier (862 against 869
+dominates. vLLM itself is not run-to-run deterministic here either: each
+of the four repeated stock runs differed from the first (16, 22, 16 and 16
+of 24 identical), while all five plugin runs have the same 10 identical
+sequences and the same 895 tokens before the first divergence. In the
+earlier recording at 6a2a470 the plugin matched on 9 of 24 and two stock
+runs matched the first on every prompt (results/README.md).dentical sequences, but one diverges from stock earlier (862 against 869
 tokens before the first divergence).
