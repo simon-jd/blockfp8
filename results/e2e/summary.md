@@ -40,6 +40,21 @@ Each run's figure is the median of 3 repetitions; the tables give the median ove
 | stock (run4) | 16/24 | 1159/1450 (79.9%) | 80.9% | 0.1708 | 0.1252 | 0.00237 | 0.0635 |
 | stock (run5) | 16/24 | 1159/1450 (79.9%) | 80.9% | 0.1708 | 0.1252 | 0.00237 | 0.0635 |
 | plugin (run5) | 10/24 | 895/1450 (61.7%) | 66.1% | 0.3613 | 0.4369 | 0.01898 | 0.2382 |
+| triton (extra) | 10/24 | 945/1450 (65.2%) | 67.8% | 0.3355 | 0.5000 | 0.01753 | 0.1929 |
+
+## Outputs vs vLLM's own W8A8 path (triton (extra))
+
+One run with Marlin disabled (VLLM_DISABLED_KERNELS); vLLM selected TritonFp8BlockScaledMMKernel. It quantizes activations like the plugin, so it separates the effect of W8A8 from that of the kernel.
+
+| run | identical sequences | tokens before first divergence | position-wise match | max abs logprob diff, greedy (up to divergence) | teacher-forced max | teacher-forced mean | teacher-forced p99 |
+|---|---|---|---|---|---|---|---|
+| plugin (run1) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5700 | 0.02218 | 0.2669 |
+| plugin (run2) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5700 | 0.02218 | 0.2613 |
+| plugin (run3) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5700 | 0.02218 | 0.2669 |
+| plugin (run4) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5700 | 0.02218 | 0.2669 |
+| plugin (run5) | 6/24 | 822/1449 (56.7%) | 60.6% | 0.3745 | 0.5700 | 0.02217 | 0.2757 |
+
+Its own speed (one run): prefill L=256: 16663 tok/s, L=1024: 16240 tok/s, L=4096: 14757 tok/s; TPOT B=1: 17.62 ms, B=4: 14.63 ms, B=16: 15.20 ms, B=64: 17.15 ms (vLLM's shipped default Triton config; none is tuned for this GPU).
 
 ## wikitext-2 perplexity
 
