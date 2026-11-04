@@ -6,9 +6,9 @@ Implementations, each with the operands it would get in practice:
                      the bf16 activations (what a linear layer has to run)
   blockfp8_fused     bf16 activations quantized inside the GEMM (gemm_bf16,
                      M <= 256 only)
-  blockfp8_linear    blockfp8.linear, what the vLLM plugin runs: fused where the
-                     plan table prefers it, else blockfp8's own quantization
-                     kernel + the GEMM
+  blockfp8_linear    blockfp8.linear, what the vLLM plugin runs: blockfp8's own
+                     quantization kernel + the GEMM (fused only where the fused
+                     table says it wins, which with the current table is nowhere)
   vllm_group_quant   vLLM's per_token_group_quant_fp8 alone, for reference
   vllm_triton        vLLM 0.31 w8a8_triton_block_scaled_mm on pre-quantized
                      activations (row-major scales, as vLLM passes them)

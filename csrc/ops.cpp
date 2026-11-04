@@ -184,8 +184,8 @@ std::tuple<at::Tensor, at::Tensor> quantize(const at::Tensor& x, double eps) {
   return {q, s};
 }
 
-// A linear layer: fused quantization where the plan table prefers it
-// (decode batches), else quantize() followed by gemm().
+// A linear layer: quantize() followed by gemm(). gemm_bf16 runs instead where
+// the fused table says it wins, which with the current table is no shape.
 at::Tensor linear(const at::Tensor& x, const at::Tensor& b, const at::Tensor& b_scales) {
   check_activations(x, "blockfp8.linear");
   if (blockfp8::prefers_fused(int(x.size(0)), int(b.size(0)), int(x.size(1))))

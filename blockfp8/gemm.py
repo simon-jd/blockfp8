@@ -154,7 +154,8 @@ def gemm_bf16(
 
 
 def prefers_fused(m: int, n: int, k: int) -> bool:
-    """Whether the plan table runs this shape with fused quantization."""
+    """Whether linear would run this shape with fused quantization (gemm_bf16).
+    False for every shape with the current fused table (csrc/fused_plan_table.inc)."""
     if not native_available():
         raise RuntimeError(f"native extension not built ({_LIB} missing)")
     return torch.ops.blockfp8.prefers_fused(m, n, k)
@@ -179,9 +180,10 @@ def quantize_cuda(x: torch.Tensor, eps: float = 1e-10) -> tuple[torch.Tensor, to
 
 
 def linear(x: torch.Tensor, b_q: torch.Tensor, b_scales: torch.Tensor) -> torch.Tensor:
-    """bf16 x [M, K] @ block-FP8 weight^T as one call: fused quantization
-    where the plan table says it wins (decode batches), else quantize_cuda
-    followed by gemm. This is what the vLLM plugin runs.
+    """bf16 x [M, K] @ block-FP8 weight^T as one call: quantize_cuda followed
+    by gemm. This is what the vLLM plugin runs. It would run gemm_bf16 where
+    prefers_fused is true, but the fused table has no such shape: the fused
+    kernel lost on every tuned shape (results/gemm/autotune_fused.json).
     """
     _check_bf16(x)
     return torch.ops.blockfp8.linear(x, b_q, b_scales)

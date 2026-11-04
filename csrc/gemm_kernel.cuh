@@ -28,7 +28,8 @@
 // quantization kernel followed by the GEMM. The K tile's existing barrier
 // publishes the stage; no shared ring or extra barrier is needed. Every CTA of
 // a tile row quantizes the same rows again, which is cheap only for the few
-// rows of a decode batch; the plan table fuses only where it measured faster.
+// rows of a decode batch. It measured slower than the separate kernel on every
+// tuned shape, so blockfp8.linear does not use it (docs/design-tradeoffs.md, 9).
 #pragma once
 
 #include <cuda_bf16.h>

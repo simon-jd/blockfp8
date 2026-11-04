@@ -10,10 +10,9 @@ import blockfp8
 
 
 class BlockFp8LinearKernel(Fp8BlockScaledMMLinearKernel):
-    """W8A8 block-FP8 linear: blockfp8.linear (activation quantization fused
-    into the GEMM for decode batches, a separate quantization kernel
-    otherwise) on weights left as the checkpoint stores them ([N, K] e4m3,
-    one float32 scale per 128x128 block)."""
+    """W8A8 block-FP8 linear: blockfp8.linear (blockfp8's own activation
+    quantization kernel, then the GEMM) on weights left as the checkpoint
+    stores them ([N, K] e4m3, one float32 scale per 128x128 block)."""
 
     @classmethod
     def is_supported(cls, compute_capability: int | None = None) -> tuple[bool, str | None]:
