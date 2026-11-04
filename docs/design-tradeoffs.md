@@ -164,9 +164,26 @@ Numbers come from `results/` (see the README for how they were measured).
   activation-scale loads (commit bed9867), the fused kernel lost on every
   tuned shape: by 0.2-1.1 us at M = 1-16 on qkv, o and down, 1.6-5.5 us on
   gate_up, and by up to 358 us at M = 256 (results/gemm/autotune_fused.json).
-  Before that it had won by 0.1-1.1 us on 6 of 12 decode shapes. The kernel
-  stays (tested bitwise equal to quantize-then-GEMM) for shapes where a
-  future sweep finds it faster; untuned shapes do not fuse.
+  Before that it had won by 0.1-1.1 us on 6 of 12 decode shapes.
+- **Kept as a measured negative result.** The kernel and
+  `csrc/fused_plan_table.inc` ship although `linear` never runs them: the
+  committed GEMM results have a `blockfp8_fused` column and
+  `results/gemm/autotune_fused.json` is the evidence for the loss above, and
+  both stay reproducible from the code. Every entry of the table says the
+  separate kernel wins, and untuned shapes do not fuse, so `prefers_fused`
+  is false everywhere. To run it:
+  - `blockfp8.gemm_bf16(x, b_q, b_scales)` calls it directly (bf16
+    activations; `config` and `split_k` index `blockfp8.fused_configs()`);
+  - `flock /var/tmp/rtx4090.lock .venv/bin/python bench/autotune.py --fused`
+    re-times the five fused configurations against `quantize_cuda` + `gemm`
+    on the four layer shapes at the tuned M <= 256 and rewrites the JSON and
+    the table; after
+    `cmake --build build`, `linear` fuses wherever the new table says the
+    fused kernel won;
+  - `bench/bench_gemm.py` times it as `blockfp8_fused` (M <= 256);
+  - `pytest tests/test_gemm_gpu.py -k fused` checks it bitwise against
+    quantize-then-GEMM (also with split-K, inside a CUDA graph, and against
+    vLLM's quantizer).
 
 ## 10. A quantization kernel of our own
 
