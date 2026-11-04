@@ -58,14 +58,15 @@ Its own speed (one run): prefill L=256: 16752 tok/s, L=1024: 16402 tok/s, L=4096
 
 ## wikitext-2 perplexity
 
-Source: results/e2e/wikitext2_ppl.json (bench/e2e_vllm.py --ppl), commit 0a65e1d038. wikitext-2-raw-v1 test (4358 rows, https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/wikitext-2-raw-v1/test-00000-of-00001.parquet, sha256 5f1bea067869...), joined with blank lines: 299078 tokens, 147 non-overlapping windows of 2048, each scored on its own (prompt_logprobs; 298931 scored tokens). Engine: {"gpu_memory_utilization": 0.8, "max_model_len": 8192, "max_num_batched_tokens": 2048, "max_num_seqs": 128, "enable_prefix_caching": false, "seed": 0}.
+Source: results/e2e/wikitext2_ppl.json (bench/e2e_vllm.py --ppl; a later run of one configuration is added with --ppl --only, at the commit shown for each run). wikitext-2-raw-v1 test (4358 rows, https://huggingface.co/datasets/Salesforce/wikitext/resolve/main/wikitext-2-raw-v1/test-00000-of-00001.parquet, sha256 5f1bea067869...), joined with blank lines: 299078 tokens, 147 non-overlapping windows of 2048, each scored on its own (prompt_logprobs; 298931 scored tokens). Engine: {"gpu_memory_utilization": 0.8, "max_model_len": 8192, "max_num_batched_tokens": 2048, "max_num_seqs": 128, "enable_prefix_caching": false, "seed": 0}.
 
-| run | kernel (vLLM's log) | perplexity | mean NLL |
-|---|---|---|---|
-| stock (ppl1) | MarlinFP8ScaledMMLinearKernel | 9.7646 | 2.27876 |
-| plugin (ppl1) | BlockFp8LinearKernel | 9.7735 | 2.27968 |
-| triton (ppl1) | TritonFp8BlockScaledMMKernel | 9.7739 | 2.27971 |
-| stock (ppl2) | MarlinFP8ScaledMMLinearKernel | 9.7646 | 2.27876 |
+| run | commit | kernel (vLLM's log) | perplexity | mean NLL |
+|---|---|---|---|---|
+| stock (ppl1) | 0a65e1d038 | MarlinFP8ScaledMMLinearKernel | 9.7646 | 2.27876 |
+| plugin (ppl1) | 0a65e1d038 | BlockFp8LinearKernel | 9.7735 | 2.27968 |
+| triton (ppl1) | 0a65e1d038 | TritonFp8BlockScaledMMKernel | 9.7739 | 2.27971 |
+| stock (ppl2) | 0a65e1d038 | MarlinFP8ScaledMMLinearKernel | 9.7646 | 2.27876 |
+| plugin (ppl3) | 2af08cbf64 | BlockFp8LinearKernel | 9.7735 | 2.27967 |
 
 Per-token logprob differences over the same scored tokens:
 
@@ -75,3 +76,6 @@ Per-token logprob differences over the same scored tokens:
 | triton (ppl1) | stock (ppl1) | 6.21e-02 | 4.83e-01 | 1.08e+00 | 9.625 | -9.46e-04 | 2.2% |
 | plugin (ppl1) | triton (ppl1) | 7.91e-02 | 6.20e-01 | 1.37e+00 | 8.375 | +3.51e-05 | 2.0% |
 | stock (ppl2) | stock (ppl1) | 0.00e+00 | 0.00e+00 | 0.00e+00 | 0.000 | +0.00e+00 | 100.0% |
+| plugin (ppl3) | stock (ppl1) | 6.16e-02 | 4.79e-01 | 1.07e+00 | 7.124 | -9.07e-04 | 2.2% |
+| plugin (ppl3) | triton (ppl1) | 7.91e-02 | 6.20e-01 | 1.37e+00 | 8.375 | +3.93e-05 | 2.0% |
+| plugin (ppl3) | plugin (ppl1) | 2.71e-05 | 0.00e+00 | 0.00e+00 | 0.785 | +4.19e-06 | 100.0% |

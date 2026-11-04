@@ -368,18 +368,20 @@ way), and batch 64 gains 11%, where `linear` is 1.03-1.23x faster than
 Marlin.
 
 **Perplexity** (results/e2e/wikitext2_ppl.json, `bench/e2e_vllm.py --ppl`;
-recorded at commit 5fab662 with the plan table of that time and not
-re-measured):
+stock and Triton recorded at commit 0a65e1d, the plugin at 0a65e1d and again at
+2af08cb with the kernel and plan tables of this document):
 the wikitext-2-raw-v1 test split, its 4,358 lines joined with blank lines,
 is 298,931 tokens; it is cut into 147 non-overlapping windows of 2048 tokens,
 each scored on its own with prompt_logprobs (every token but a window's
 first), in one engine process per configuration. Stock 9.7646, plugin 9.7735
-(+0.09%), vLLM's Triton W8A8 path 9.7739 (+0.10%); a second stock run
-reproduced the first bit for bit. The per-token logprob differences against
-stock are the same for both W8A8 kernels (mean 0.062, p99 0.48, mean signed
--9e-4 for the plugin and -9.5e-4 for Triton), and between the two kernels
-larger (mean 0.079, p99 0.62): they disagree token by token as much as each
-does with stock, but cost the same perplexity.
+(+0.09%; 9.77351 at 0a65e1d, 9.77347 at 2af08cb), vLLM's Triton W8A8 path
+9.7739 (+0.10%); a second stock run reproduced the first bit for bit. The
+per-token logprob differences against stock are the same for both W8A8
+kernels (mean 0.062, p99 0.48, mean signed -9e-4 for the plugin and -9.5e-4
+for Triton), and between the two kernels larger (mean 0.079, p99 0.62): they
+disagree token by token as much as each does with stock, but cost the same
+perplexity. The two plugin runs agree exactly on 298,862 of 298,931 token
+logprobs; the other 69 differ by at most 0.79.
 
 **Outputs** (recorded at 6a2a470; the 24-prompt prefill has an untabulated
 M, so the later balanced choice may change its plan). They are not the

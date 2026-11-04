@@ -79,17 +79,22 @@ Recorded at commit 6a2a470; before the scale and plan-table changes
 (commit ec74438) the speedups were 1.63-1.71x for prefill and
 1.011-1.017x / 1.090x for decode.
 
-**Model quality** (recorded at commit 5fab662, before the plan-table
-changes; not re-measured). wikitext-2-raw-v1 test perplexity (298,931 tokens in 147
+**Model quality.** wikitext-2-raw-v1 test perplexity (298,931 tokens in 147
 windows of 2048, scored with prompt_logprobs; `bench/e2e_vllm.py --ppl`,
 [results/e2e/wikitext2_ppl.json](results/e2e/wikitext2_ppl.json)): stock
 (Marlin, W8A16) **9.7646**, plugin **9.7735** (+0.09%), vLLM's own W8A8
-path (Triton, Marlin disabled) **9.7739** (+0.10%); a second stock run gave
-the same logprobs bit for bit. Per token, the plugin's logprobs differ from
-stock by a mean of 0.062 (p99 0.48, max 7.1), Triton's by 0.062 (p99 0.48,
-max 9.6), and the plugin's from Triton's by 0.079 (p99 0.62): W8A8 costs both
-kernels the same perplexity, and the two differ from each other by more than
-either does from stock.
+path (Triton, Marlin disabled) **9.7739** (+0.10%). Stock and Triton were
+measured at commit 0a65e1d (recorded in 5fab662; a second stock run gave the
+same logprobs bit for bit) and not repeated, since neither uses this kernel.
+The plugin was measured at 0a65e1d, before the kernel and plan-table changes
+(9.77351), and again at 2af08cb, which has the kernel and plan tables of this
+README (9.77347, mean NLL 4e-6 lower); the figures here are from the second.
+Per token, the plugin's logprobs differ from stock by a mean of 0.062 (p99
+0.48, max 7.1; the same at both commits), Triton's by 0.062 (p99 0.48, max
+9.6), and the plugin's from Triton's by 0.079 (p99 0.62, max 8.4): W8A8 costs
+both kernels the same perplexity, and the two differ from each other by more
+than either does from stock. The two plugin runs agree exactly on 298,862 of
+298,931 token logprobs; the other 69 differ by at most 0.79.
 
 **Outputs are not identical to stock**, and are not expected to be: the
 plugin quantizes activations to FP8 (W8A8), Marlin does not (W8A16). Over 24
@@ -136,7 +141,7 @@ quantize-then-GEMM (tests).
 - End to end, decode at batch 1-16 gains only 2-3% (the layers are weight
   streams for both kernels), and greedy outputs differ from stock vLLM on
   most prompts, as any W8A8 path does. Quality was checked by wikitext-2
-  perplexity only (+0.09%, measured before these changes); no downstream
+  perplexity only (+0.09%, measured at 2af08cb); no downstream
   task was evaluated.
 - One GPU (RTX 4090, clocks not lockable, median SM clock 2.79 GHz during
   the GEMM runs), shapes of one model; the plan tables are specific to both.
