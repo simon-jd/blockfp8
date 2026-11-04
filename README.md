@@ -79,8 +79,10 @@ Recorded at commit 6a2a470; before the scale and plan-table changes
 (commit ec74438) the speedups were 1.63-1.71x for prefill and
 1.011-1.017x / 1.090x for decode.
 
-**Model quality.** wikitext-2-raw-v1 test perplexity (298,931 tokens in 147
-windows of 2048, scored with prompt_logprobs; `bench/e2e_vllm.py --ppl`,
+**Model quality.** wikitext-2-raw-v1 test perplexity (the split tokenizes to
+299,078 tokens, `tokens` in the JSON, cut into 147 windows of up to 2048; a
+window's first token is not scored, so 298,931 are, `scored_tokens`; scored
+with prompt_logprobs; `bench/e2e_vllm.py --ppl`,
 [results/e2e/wikitext2_ppl.json](results/e2e/wikitext2_ppl.json)): stock
 (Marlin, W8A16) **9.7646**, plugin **9.7735** (+0.09%), vLLM's own W8A8
 path (Triton, Marlin disabled) **9.7739** (+0.10%). Stock and Triton were

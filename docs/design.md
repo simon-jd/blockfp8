@@ -371,9 +371,11 @@ Marlin.
 stock and Triton recorded at commit 0a65e1d, the plugin at 0a65e1d and again at
 2af08cb with the kernel and plan tables of this document):
 the wikitext-2-raw-v1 test split, its 4,358 lines joined with blank lines,
-is 298,931 tokens; it is cut into 147 non-overlapping windows of 2048 tokens,
-each scored on its own with prompt_logprobs (every token but a window's
-first), in one engine process per configuration. Stock 9.7646, plugin 9.7735
+tokenizes to 299,078 tokens (`tokens` in the JSON); it is cut into 147
+non-overlapping windows of up to 2048 tokens, each scored on its own with
+prompt_logprobs. A window's first token has no context and is not scored,
+so 298,931 tokens are scored (`scored_tokens`), in one engine process per
+configuration. Stock 9.7646, plugin 9.7735
 (+0.09%; 9.77351 at 0a65e1d, 9.77347 at 2af08cb), vLLM's Triton W8A8 path
 9.7739 (+0.10%); a second stock run reproduced the first bit for bit. The
 per-token logprob differences against stock are the same for both W8A8
